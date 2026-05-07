@@ -52,8 +52,8 @@ export default function Home() {
 
       <div className="relative z-10 min-h-screen pb-20">
         <div className="sticky top-0 z-20 bg-white/5 backdrop-blur-lg border-b border-white/10 px-4 py-4">
-          <div className="max-w-md mx-auto">
-            <div className="flex items-center justify-between mb-3">
+          <div className="max-w-md mx-auto lg:max-w-5xl lg:flex lg:items-center lg:justify-between lg:gap-8">
+            <div className="flex items-center justify-between mb-3 lg:mb-0 lg:w-1/3">
               <div className="flex items-center gap-2">
                 <AnimatePresence>
                   {currentWeather && (
@@ -91,12 +91,14 @@ export default function Home() {
                 </motion.button>
               )}
             </div>
-            <WeatherSearch key={searchResetKey} />
+            <div className="lg:flex-1">
+              <WeatherSearch key={searchResetKey} />
+            </div>
           </div>
         </div>
 
         <div className="px-4 pt-6">
-          <div className="max-w-md mx-auto">
+          <div className="max-w-md mx-auto lg:max-w-5xl">
             <AnimatePresence>
               {error && (
                 <motion.div
@@ -126,13 +128,17 @@ export default function Home() {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="space-y-6 pb-20"
+                  className="space-y-6 pb-20 lg:grid lg:grid-cols-12 lg:gap-8 lg:space-y-0 lg:items-start"
                 >
-                  <TemperatureCard />
-                  <HourlyForecast />
-                  <DailyForecast />
-                  <WeatherDetails />
-                  <Favorites />
+                  <div className="lg:col-span-5 space-y-6 lg:sticky lg:top-32">
+                    <TemperatureCard />
+                    <WeatherDetails />
+                  </div>
+                  <div className="lg:col-span-7 space-y-6 mt-6 lg:mt-0">
+                    <HourlyForecast />
+                    <DailyForecast />
+                    <Favorites />
+                  </div>
                 </motion.div>
               ) : (
                 <motion.div

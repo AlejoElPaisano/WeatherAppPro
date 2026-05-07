@@ -142,7 +142,7 @@ export default function WeatherSearch() {
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="w-full max-w-md mx-auto mb-6"
+      className="w-full mb-6 lg:mb-0"
     >
       <form onSubmit={handleSearch} className="relative flex gap-2">
         <div className="relative flex-1">
