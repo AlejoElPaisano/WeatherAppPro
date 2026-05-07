@@ -128,16 +128,16 @@ export default function Home() {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="space-y-6 pb-20 lg:grid lg:grid-cols-12 lg:gap-8 lg:space-y-0 lg:items-start"
+                  className="flex flex-col gap-6 pb-20 lg:grid lg:grid-cols-12 lg:gap-8 lg:items-start"
                 >
-                  <div className="lg:col-span-5 space-y-6 lg:sticky lg:top-32">
-                    <TemperatureCard />
-                    <WeatherDetails />
+                  <div className="contents lg:block lg:col-span-5 space-y-6 lg:sticky lg:top-32">
+                    <div className="order-1 lg:order-none"><TemperatureCard /></div>
+                    <div className="order-4 lg:order-none"><WeatherDetails /></div>
                   </div>
-                  <div className="lg:col-span-7 space-y-6 mt-6 lg:mt-0">
-                    <HourlyForecast />
-                    <DailyForecast />
-                    <Favorites />
+                  <div className="contents lg:block lg:col-span-7 space-y-6">
+                    <div className="order-2 lg:order-none"><HourlyForecast /></div>
+                    <div className="order-3 lg:order-none"><DailyForecast /></div>
+                    <div className="order-5 lg:order-none"><Favorites /></div>
                   </div>
                 </motion.div>
               ) : (

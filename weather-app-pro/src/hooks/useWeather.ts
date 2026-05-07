@@ -285,20 +285,20 @@ const normalizeWeatherData = (
     });
   }
 
-  const startTime = interpolatedHourly[0].dt;
+  const startTime = Math.max(currentHourDt, interpolatedHourly[0].dt);
   const endTime = interpolatedHourly[interpolatedHourly.length - 1].dt;
-  // Ventana ampliada para eventos de sol: ±6 horas del rango de forecast
-  const sunWindowStart = startTime - 6 * 3600;
-  const sunWindowEnd = endTime + 6 * 3600;
+  const sunWindowStart = startTime;
+  const sunWindowEnd = endTime;
 
   const combined = [...interpolatedHourly, ...sunEvents]
     .sort((a, b) => a.dt - b.dt)
     .filter(item => {
+      // Excluir estrictamente cualquier hora o evento en el pasado relativo a la hora actual
+      if (item.dt < startTime) return false;
+
       if (item.isSunrise || item.isSunset) {
-        // Incluir si cae dentro de la ventana ampliada
         return item.dt >= sunWindowStart && item.dt <= sunWindowEnd;
       }
-      // Horas normales: rango exacto
       return item.dt >= startTime && item.dt <= endTime;
     });
 

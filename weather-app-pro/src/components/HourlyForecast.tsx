@@ -1,5 +1,6 @@
 'use client';
 
+import { useRef, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useWeatherStore } from '@/store/weatherStore';
 import {
@@ -10,7 +11,7 @@ import {
   XAxis,
   YAxis
 } from 'recharts';
-import { Sun, Cloud, CloudRain, Snowflake, CloudLightning, Droplets, Sunrise, Sunset } from 'lucide-react';
+import { Sun, Cloud, CloudRain, Snowflake, CloudLightning, Droplets, Sunrise, Sunset, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const degree = '\u00B0';
 const lineColor = '#facc15';
@@ -30,10 +31,29 @@ const capitalize = (str: string) => str.charAt(0).toUpperCase() + str.slice(1);
 export default function HourlyForecast() {
   const { currentWeather } = useWeatherStore();
 
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [showLeftArrow, setShowLeftArrow] = useState(false);
+  const [showRightArrow, setShowRightArrow] = useState(true);
+
+  const hourlyData = currentWeather?.forecast.hourly;
+
+  const handleScroll = () => {
+    if (!scrollRef.current) return;
+    const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
+    setShowLeftArrow(scrollLeft > 0);
+    setShowRightArrow(Math.ceil(scrollLeft) < scrollWidth - clientWidth - 1);
+  };
+
+  useEffect(() => {
+    handleScroll();
+    window.addEventListener('resize', handleScroll);
+    return () => window.removeEventListener('resize', handleScroll);
+  }, [hourlyData]);
+
   if (!currentWeather) return null;
 
   const { current, forecast } = currentWeather;
-  const { hourly, daily } = forecast;
+  const { daily, hourly } = forecast;
   const today = daily[0];
 
   const chartData = hourly.map((hour) => ({
@@ -41,6 +61,13 @@ export default function HourlyForecast() {
     temp: hour.temp,
     humidity: hour.humidity
   }));
+
+  const scroll = (direction: 'left' | 'right') => {
+    if (scrollRef.current) {
+      const scrollAmount = direction === 'left' ? -300 : 300;
+      scrollRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    }
+  };
 
   const summary = today
     ? `${capitalize(current.description)}. Maximas entre ${today.max - 1} y ${today.max + 1} C y minimas entre ${Math.max(today.min - 1, -20)} y ${today.min + 1} C.`
@@ -71,10 +98,31 @@ export default function HourlyForecast() {
         <p className="px-1 pb-5 text-xl font-semibold leading-relaxed text-white">
           {summary}
         </p>
-        <div className="h-px bg-white/20" />
+        <div className="h-px bg-white/20 mb-2" />
 
-        <div className="overflow-x-auto scrollbar-hide">
-          <div className="pt-6 pb-2" style={{ minWidth: `${Math.max(620, hourly.length * 64)}px` }}>
+        <div className="relative group">
+          <button
+            onClick={() => scroll('left')}
+            className={`hidden lg:flex absolute left-0 top-[45%] -translate-y-1/2 z-20 items-center justify-center w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-md text-white transition-opacity duration-300 ${showLeftArrow ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+            title="Desplazar a la izquierda"
+          >
+            <ChevronLeft className="w-5 h-5 pr-0.5" />
+          </button>
+
+          <button
+            onClick={() => scroll('right')}
+            className={`hidden lg:flex absolute right-0 top-[45%] -translate-y-1/2 z-20 items-center justify-center w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-md text-white transition-opacity duration-300 ${showRightArrow ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+            title="Desplazar a la derecha"
+          >
+            <ChevronRight className="w-5 h-5 pl-0.5" />
+          </button>
+
+          <div
+            ref={scrollRef}
+            onScroll={handleScroll}
+            className="overflow-x-auto scrollbar-hide"
+          >
+            <div className="pt-6 pb-2" style={{ minWidth: `${Math.max(620, hourly.length * 64)}px` }}>
             <div
               className="grid px-5"
               style={{ gridTemplateColumns: `repeat(${hourly.length}, minmax(0, 1fr))` }}
@@ -174,6 +222,7 @@ export default function HourlyForecast() {
               ))}
             </div>
           </div>
+        </div>
         </div>
       </div>
     </motion.div>
