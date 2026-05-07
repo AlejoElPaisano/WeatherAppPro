@@ -113,9 +113,6 @@ export default function Home() {
                   <p className="text-white/60 mb-4">
                     Busca una ciudad o usa tu ubicacion para comenzar
                   </p>
-                  <p className="text-sm text-white/40">
-                    Configura tu API key de OpenWeather en .env.local
-                  </p>
                 </motion.div>
               )}
             </AnimatePresence>

@@ -11,8 +11,9 @@ import {
 } from '@/types/weather';
 import { useWeatherStore } from '@/store/weatherStore';
 
-interface OpenWeatherGeoItem {
+export interface LocationSuggestion {
   name: string;
+  state?: string;
   country: string;
   lat: number;
   lon: number;
@@ -172,7 +173,26 @@ const normalizeWeatherData = (
   };
 };
 
-const fetchWeatherByCoords = async (lat: number, lon: number, city: string, country: string) => {
+export const formatLocationSuggestion = (location: LocationSuggestion) => {
+  return [location.name, location.state, location.country].filter(Boolean).join(', ');
+};
+
+const fetchLocationSuggestions = async (query: string) => {
+  const apiKey = getApiKey();
+
+  return fetchJson<LocationSuggestion[]>(
+    `https://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(query)}&limit=5&appid=${apiKey}`,
+    'Error al buscar ciudades'
+  );
+};
+
+const fetchWeatherByCoords = async (
+  lat: number,
+  lon: number,
+  city: string,
+  country: string,
+  state?: string
+) => {
   const apiKey = getApiKey();
   const params = `lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric&lang=es`;
 
@@ -189,6 +209,7 @@ const fetchWeatherByCoords = async (lat: number, lon: number, city: string, coun
 
   const location: LocationData = {
     city: city || weatherData.name,
+    state,
     country: country || weatherData.sys.country,
     lat,
     lon
@@ -214,13 +235,19 @@ export const useWeatherSearch = () => {
     setCurrentWeather(result.data);
   }, [setCurrentWeather, setWeatherType]);
 
-  const searchWeatherByCoords = useCallback(async (lat: number, lon: number, city = '', country = '') => {
+  const searchWeatherByCoords = useCallback(async (
+    lat: number,
+    lon: number,
+    city = '',
+    country = '',
+    state?: string
+  ) => {
     setLocalLoading(true);
     setLoading(true);
     setError(null);
 
     try {
-      const result = await fetchWeatherByCoords(lat, lon, city, country);
+      const result = await fetchWeatherByCoords(lat, lon, city, country, state);
       applyWeatherResult(result);
 
       return result.data;
@@ -240,18 +267,20 @@ export const useWeatherSearch = () => {
     setError(null);
 
     try {
-      const apiKey = getApiKey();
-      const geoData = await fetchJson<OpenWeatherGeoItem[]>(
-        `https://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(city)}&limit=1&appid=${apiKey}`,
-        'Error al buscar la ciudad'
-      );
+      const geoData = await fetchLocationSuggestions(city);
 
       if (!geoData.length) {
         throw new Error('Ciudad no encontrada');
       }
 
       const location = geoData[0];
-      const result = await fetchWeatherByCoords(location.lat, location.lon, location.name, location.country);
+      const result = await fetchWeatherByCoords(
+        location.lat,
+        location.lon,
+        location.name,
+        location.country,
+        location.state
+      );
       applyWeatherResult(result);
 
       return result.data;
@@ -265,7 +294,13 @@ export const useWeatherSearch = () => {
     }
   }, [applyWeatherResult, setError, setLoading]);
 
-  return { searchWeather, searchWeatherByCoords, loading };
+  const searchLocationSuggestions = useCallback(async (query: string) => {
+    if (!query.trim()) return [];
+
+    return fetchLocationSuggestions(query.trim());
+  }, []);
+
+  return { searchWeather, searchWeatherByCoords, searchLocationSuggestions, loading };
 };
 
 export const useGeolocation = () => {

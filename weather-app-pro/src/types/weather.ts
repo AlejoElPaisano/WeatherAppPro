@@ -43,6 +43,7 @@ export interface HourlyForecast {
 
 export interface LocationData {
   city: string;
+  state?: string;
   country: string;
   lat: number;
   lon: number;

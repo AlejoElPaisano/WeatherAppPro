@@ -4,7 +4,8 @@ Weather App Pro es una aplicacion web mobile-first para consultar clima actual, 
 
 ## Features
 
-- Busqueda de ciudades con OpenWeather.
+- Busqueda de ciudades con autocompletado usando OpenWeather Geocoding.
+- Seleccion precisa por ciudad, estado/provincia y pais.
 - Geolocalizacion desde el navegador.
 - Fondo dinamico segun el clima.
 - Temperatura principal con sensacion termica, humedad, viento, visibilidad, presion e indice UV.
@@ -26,7 +27,9 @@ Weather App Pro es una aplicacion web mobile-first para consultar clima actual, 
 
 ## Configuracion local
 
-Crear un archivo `.env.local` en la raiz de `weather-app-pro/`:
+La aplicacion vive en `weather-app-pro/`.
+
+Crear un archivo `.env.local` dentro de `weather-app-pro/`:
 
 ```bash
 NEXT_PUBLIC_OPENWEATHER_API_KEY=tu_api_key
@@ -35,6 +38,7 @@ NEXT_PUBLIC_OPENWEATHER_API_KEY=tu_api_key
 Instalar dependencias y correr el servidor:
 
 ```bash
+cd weather-app-pro
 npm install
 npm run dev
 ```
