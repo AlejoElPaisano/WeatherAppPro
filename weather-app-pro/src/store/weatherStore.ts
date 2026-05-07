@@ -10,6 +10,7 @@ interface WeatherStore {
   weatherType: WeatherType;
   favorites: string[];
   unit: 'C' | 'F';
+  searchResetKey: number;
 
   // Acciones
   setCurrentWeather: (weather: WeatherData) => void;
@@ -21,6 +22,7 @@ interface WeatherStore {
   removeFavorite: (city: string) => void;
   toggleUnit: () => void;
   loadFavorites: () => void;
+  clearWeather: () => void;
 }
 
 export const useWeatherStore = create<WeatherStore>((set, get) => ({
@@ -31,6 +33,7 @@ export const useWeatherStore = create<WeatherStore>((set, get) => ({
   weatherType: 'clear',
   favorites: [],
   unit: 'C',
+  searchResetKey: 0,
 
   setCurrentWeather: (weather) => set({ currentWeather: weather }),
   setSearchQuery: (query) => set({ searchQuery: query }),
@@ -69,5 +72,7 @@ export const useWeatherStore = create<WeatherStore>((set, get) => ({
         console.error('Error loading favorites', e);
       }
     }
-  }
+  },
+
+  clearWeather: () => set((state) => ({ currentWeather: null, error: null, weatherType: 'clear', searchResetKey: state.searchResetKey + 1 }))
 }));

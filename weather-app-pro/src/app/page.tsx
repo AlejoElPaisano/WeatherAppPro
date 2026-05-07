@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { CloudSun, Star } from 'lucide-react';
+import { ArrowLeft, CloudSun, Star } from 'lucide-react';
 import WeatherSearch from '@/components/WeatherSearch';
 import TemperatureCard from '@/components/TemperatureCard';
 import WeatherDetails from '@/components/WeatherDetails';
@@ -15,7 +15,7 @@ import { useWeatherStore } from '@/store/weatherStore';
 import { useGeolocation } from '@/hooks/useWeather';
 
 export default function Home() {
-  const { currentWeather, loading, error, addFavorite } = useWeatherStore();
+  const { currentWeather, loading, error, addFavorite, clearWeather, searchResetKey } = useWeatherStore();
   const { searchByLocation } = useGeolocation();
 
   useEffect(() => {
@@ -36,6 +36,10 @@ export default function Home() {
     }
   };
 
+  const handleGoBack = () => {
+    clearWeather();
+  };
+
   return (
     <main className="min-h-screen relative overflow-hidden">
       <WeatherBackground />
@@ -44,7 +48,27 @@ export default function Home() {
         <div className="sticky top-0 z-20 bg-white/5 backdrop-blur-lg border-b border-white/10 px-4 py-4">
           <div className="max-w-md mx-auto">
             <div className="flex items-center justify-between mb-3">
-              <h1 className="text-xl font-bold text-white">Climix</h1>
+              <div className="flex items-center gap-2">
+                <AnimatePresence>
+                  {currentWeather && (
+                    <motion.button
+                      key="back-btn"
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -10 }}
+                      transition={{ duration: 0.2 }}
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                      onClick={handleGoBack}
+                      className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+                      title="Volver al inicio"
+                    >
+                      <ArrowLeft className="w-5 h-5 text-white" />
+                    </motion.button>
+                  )}
+                </AnimatePresence>
+                <h1 className="text-xl font-bold text-white">Climix</h1>
+              </div>
               {currentWeather && (
                 <motion.button
                   whileHover={{ scale: 1.1 }}
@@ -57,7 +81,7 @@ export default function Home() {
                 </motion.button>
               )}
             </div>
-            <WeatherSearch />
+            <WeatherSearch key={searchResetKey} />
           </div>
         </div>
 

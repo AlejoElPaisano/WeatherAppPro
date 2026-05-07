@@ -236,38 +236,54 @@ const normalizeWeatherData = (
     });
   }
 
+  // Generar eventos de amanecer y atardecer para cada dia del rango de forecast
+  // La API solo devuelve el sunrise/sunset de hoy; para dias siguientes sumamos 86400s por dia
   const sunEvents: HourlyForecast[] = [];
-  const sunriseDate = new Date(citySunrise * 1000);
-  const sunsetDate = new Date(citySunset * 1000);
+  for (let dayOffset = -1; dayOffset <= 6; dayOffset++) {
+    const daySunrise = citySunrise + dayOffset * 86400;
+    const daySunset  = citySunset  + dayOffset * 86400;
 
-  sunEvents.push({
-    dt: citySunrise,
-    hour: sunriseDate.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }),
-    temp: 0,
-    humidity: 0,
-    condition: 'Clear',
-    icon: '01d',
-    rainProbability: 0,
-    isSunrise: true
-  });
+    const srDate = new Date(daySunrise * 1000);
+    sunEvents.push({
+      dt: daySunrise,
+      hour: srDate.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }),
+      temp: 0,
+      humidity: 0,
+      condition: 'Clear',
+      icon: '01d',
+      rainProbability: 0,
+      isSunrise: true
+    });
 
-  sunEvents.push({
-    dt: citySunset,
-    hour: sunsetDate.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }),
-    temp: 0,
-    humidity: 0,
-    condition: 'Clear',
-    icon: '01n',
-    rainProbability: 0,
-    isSunset: true
-  });
+    const ssDate = new Date(daySunset * 1000);
+    sunEvents.push({
+      dt: daySunset,
+      hour: ssDate.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }),
+      temp: 0,
+      humidity: 0,
+      condition: 'Clear',
+      icon: '01n',
+      rainProbability: 0,
+      isSunset: true
+    });
+  }
 
   const startTime = interpolatedHourly[0].dt;
   const endTime = interpolatedHourly[interpolatedHourly.length - 1].dt;
+  // Ventana ampliada para eventos de sol: ±6 horas del rango de forecast
+  const sunWindowStart = startTime - 6 * 3600;
+  const sunWindowEnd = endTime + 6 * 3600;
 
   const combined = [...interpolatedHourly, ...sunEvents]
     .sort((a, b) => a.dt - b.dt)
-    .filter(item => item.dt >= startTime && item.dt <= endTime);
+    .filter(item => {
+      if (item.isSunrise || item.isSunset) {
+        // Incluir si cae dentro de la ventana ampliada
+        return item.dt >= sunWindowStart && item.dt <= sunWindowEnd;
+      }
+      // Horas normales: rango exacto
+      return item.dt >= startTime && item.dt <= endTime;
+    });
 
   for (let i = 0; i < combined.length; i++) {
     if (combined[i].isSunrise || combined[i].isSunset) {
