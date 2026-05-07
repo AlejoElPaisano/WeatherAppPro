@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useWeatherStore } from '@/store/weatherStore';
 
@@ -15,11 +15,6 @@ interface Particle {
   drift: number;
 }
 
-const seededValue = (seed: number) => {
-  const value = Math.sin(seed) * 10000;
-  return value - Math.floor(value);
-};
-
 const buildParticles = (weatherType: string): Particle[] => {
   const particleCount = weatherType === 'snow' || weatherType === 'rain'
     ? 50
@@ -27,33 +22,37 @@ const buildParticles = (weatherType: string): Particle[] => {
       ? 100
       : 20;
 
-  const weatherSeed = weatherType.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
-
-  return Array.from({ length: particleCount }, (_, index) => {
-    const seed = weatherSeed + index * 17;
-
-    return {
-      id: index,
-      x: seededValue(seed) * 100,
-      y: seededValue(seed + 1) * 100,
-      size: weatherType === 'snow'
-        ? seededValue(seed + 2) * 4 + 2
-        : weatherType === 'rain'
-          ? seededValue(seed + 2) * 2 + 1
-          : weatherType === 'night'
-            ? seededValue(seed + 2) * 2 + 1
-            : seededValue(seed + 2) * 3 + 1,
-      duration: seededValue(seed + 3) * 3 + 2,
-      delay: seededValue(seed + 4) * 2,
-      opacity: seededValue(seed + 5) * 0.6 + 0.2,
-      drift: seededValue(seed + 6) * 100 - 50
-    };
-  });
+  return Array.from({ length: particleCount }, (_, index) => ({
+    id: index,
+    x: Math.random() * 100,
+    y: Math.random() * 100,
+    size: weatherType === 'snow'
+      ? Math.random() * 4 + 2
+      : weatherType === 'rain'
+        ? Math.random() * 2 + 1
+        : weatherType === 'night'
+          ? Math.random() * 2 + 1
+          : Math.random() * 3 + 1,
+    duration: Math.random() * 3 + 2,
+    delay: Math.random() * 2,
+    opacity: Math.random() * 0.6 + 0.2,
+    drift: Math.random() * 100 - 50
+  }));
 };
 
 export default function WeatherBackground() {
   const { weatherType } = useWeatherStore();
-  const particles = useMemo(() => buildParticles(weatherType), [weatherType]);
+  const [mounted, setMounted] = useState(false);
+  const [particles, setParticles] = useState<Particle[]>([]);
+
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => {
+      setParticles(buildParticles(weatherType));
+      setMounted(true);
+    });
+
+    return () => cancelAnimationFrame(frame);
+  }, [weatherType]);
 
   const getBackgroundClass = () => {
     const backgrounds: Record<string, string> = {
@@ -91,7 +90,7 @@ export default function WeatherBackground() {
         transition={{ duration: 1 }}
       />
 
-      {particles.map((particle) => (
+      {mounted && particles.map((particle) => (
         <motion.div
           key={particle.id}
           className={`absolute ${getParticleClass()}`}
