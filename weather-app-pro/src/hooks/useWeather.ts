@@ -164,7 +164,24 @@ const normalizeWeatherData = (
   });
 
   // Generar hourly con interpolacion para mostrar por hora completa
-  const rawHourly = forecastData.list.slice(0, 8);
+  const rawHourly = [...forecastData.list].slice(0, 8);
+
+  // Asegurar que empezamos desde la hora actual si el forecast empieza mas tarde
+  const now = new Date();
+  const currentHourDate = new Date(now);
+  currentHourDate.setMinutes(0, 0, 0);
+  const currentHourDt = Math.floor(currentHourDate.getTime() / 1000);
+
+  if (rawHourly.length > 0 && rawHourly[0].dt > currentHourDt) {
+    const syntheticCurrent = {
+      dt: currentHourDt,
+      main: { ...weatherData.main },
+      weather: weatherData.weather,
+      pop: rawHourly[0].pop || 0
+    };
+    rawHourly.unshift(syntheticCurrent as any);
+  }
+
   const interpolatedHourly: HourlyForecast[] = [];
 
   for (let i = 0; i < rawHourly.length - 1; i++) {
