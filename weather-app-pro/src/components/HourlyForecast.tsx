@@ -5,7 +5,6 @@ import { motion } from 'framer-motion';
 import { useWeatherStore } from '@/store/weatherStore';
 import {
   Area,
-  AreaChart,
   Line,
   Bar,
   ComposedChart,
@@ -28,6 +27,8 @@ const weatherIconMap: Record<string, React.ReactNode> = {
   Mist: <Cloud className="w-8 h-8 text-gray-200 drop-shadow" />
 };
 
+const capitalize = (str: string) => str.charAt(0).toUpperCase() + str.slice(1);
+
 const CustomTooltip = ({ active, payload }: any) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
@@ -35,64 +36,17 @@ const CustomTooltip = ({ active, payload }: any) => {
 
     return (
       <div className="bg-slate-900/90 border border-white/10 rounded-xl p-3 shadow-xl backdrop-blur-md">
-        <p className="font-semibold text-white mb-1">{data.hour}</p>
-        <p className="text-amber-400">Temp: {data.temp}°</p>
+        <p className="font-semibold text-white mb-1">{data.time}</p>
+        <p className="text-amber-400 font-medium">Temp: {data.temp}°</p>
         {data.feels_like !== undefined && (
-          <p className="text-purple-300">Sensación: {data.feels_like}°</p>
+          <p className="text-purple-300 font-medium">Sensación: {data.feels_like}°</p>
         )}
-        <p className="text-blue-300">Lluvia: {data.rainProbability}%</p>
-        <p className="text-slate-300 capitalize">{data.conditionStr}</p>
+        <p className="text-blue-300 font-medium">Lluvia: {data.rainProbability}%</p>
+        <p className="text-slate-300 capitalize text-sm mt-1">{data.conditionStr}</p>
       </div>
     );
   }
   return null;
-};
-
-const CustomChartDot = (props: any) => {
-  const { cx, cy, payload } = props;
-  if (payload.isSunrise) {
-    return (
-      <foreignObject x={cx - 20} y={cy - 20} width={40} height={40} className="overflow-visible pointer-events-none">
-        <div className="flex flex-col items-center justify-center w-full h-full text-white drop-shadow-md">
-          <Sunrise className="w-5 h-5 text-yellow-300" />
-          <span className="text-[10px] font-medium leading-tight">{payload.hour}</span>
-        </div>
-      </foreignObject>
-    );
-  }
-  if (payload.isSunset) {
-    return (
-      <foreignObject x={cx - 20} y={cy - 20} width={40} height={40} className="overflow-visible pointer-events-none">
-        <div className="flex flex-col items-center justify-center w-full h-full text-white drop-shadow-md">
-          <Sunset className="w-5 h-5 text-orange-400" />
-          <span className="text-[10px] font-medium leading-tight">{payload.hour}</span>
-        </div>
-      </foreignObject>
-    );
-  }
-  return null;
-};
-
-const CustomTopTick = (props: any) => {
-  const { x, y, payload, chartData } = props;
-  const hourData = chartData.find((h: any) => h.dt === payload.value);
-  if (!hourData || hourData.isSunrise || hourData.isSunset) return null;
-
-  const isCurrentHour = chartData.findIndex((h: any) => !h.isSunrise && !h.isSunset) === chartData.indexOf(hourData);
-
-  return (
-    <foreignObject x={x - 40} y={y - 95} width={80} height={100} className="overflow-visible pointer-events-none">
-      <div className="flex flex-col items-center justify-center w-full h-full text-white">
-        <span className={`text-xs ${isCurrentHour ? 'font-bold text-amber-400' : 'font-medium text-white/75'}`}>
-          {isCurrentHour ? 'Ahora' : hourData.hour}
-        </span>
-        <div className="my-2 flex items-center justify-center h-10">
-          {weatherIconMap[hourData.condition] || <Sun className="w-8 h-8 text-yellow-300 drop-shadow" />}
-        </div>
-        <span className="text-sm font-semibold drop-shadow">{hourData.temp}°</span>
-      </div>
-    </foreignObject>
-  );
 };
 
 export default function HourlyForecast() {
@@ -119,21 +73,29 @@ export default function HourlyForecast() {
 
   if (!currentWeather) return null;
 
-  const { forecast } = currentWeather;
-  const { hourly } = forecast;
+  const { current, forecast } = currentWeather;
+  const { hourly, daily } = forecast;
+  const today = daily[0];
+
+  const summary = today
+    ? `${capitalize(current.description)}. Maximas entre ${today.max - 1} y ${today.max + 1} C y minimas entre ${Math.max(today.min - 1, -20)} y ${today.min + 1} C.`
+    : capitalize(current.description);
 
   const chartData = hourly.map((hour) => ({
-    ...hour,
-    conditionStr: hour.condition,
+    time: hour.hour,
+    temp: hour.temp,
+    feels_like: hour.feels_like,
+    humidity: hour.humidity,
     rainFull: hour.rainProbability > 0 ? 100 : 0,
+    rainProbability: hour.rainProbability,
+    isSunrise: hour.isSunrise,
+    isSunset: hour.isSunset,
+    conditionStr: hour.condition,
   }));
 
   const temps = chartData.filter(h => !h.isSunrise && !h.isSunset).map((h) => h.temp);
   const minTemp = Math.min(...temps, 0);
   const maxTemp = Math.max(...temps, 1);
-
-  const minDt = chartData[0].dt;
-  const maxDt = chartData[chartData.length - 1].dt;
 
   const getTempColor = (temp: number) => {
     const ratio = (temp - minTemp) / (maxTemp - minTemp || 1);
@@ -143,15 +105,23 @@ export default function HourlyForecast() {
     return `rgb(${r},${g},${b})`;
   };
 
-  // Average or max pop for footer
-  const pops = chartData.map(h => h.rainProbability || 0);
-  const maxPop = Math.max(...pops, 0);
-
   const scroll = (direction: 'left' | 'right') => {
     if (scrollRef.current) {
-      const scrollAmount = direction === 'left' ? -350 : 350;
+      const scrollAmount = direction === 'left' ? -300 : 300;
       scrollRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
     }
+  };
+
+  const renderCustomDot = (props: any) => {
+    const { cx, cy, payload } = props;
+    if (payload.isSunrise || payload.isSunset) return null;
+    return <circle cx={cx} cy={cy} r={4} fill="#ffffff" stroke="#ffffff" strokeWidth={1} />;
+  };
+
+  const renderActiveDot = (props: any) => {
+    const { cx, cy, payload } = props;
+    if (payload.isSunrise || payload.isSunset) return null;
+    return <circle cx={cx} cy={cy} r={6} fill="#ffffff" stroke="#facc15" strokeWidth={3} />;
   };
 
   return (
@@ -162,8 +132,8 @@ export default function HourlyForecast() {
       className="w-full"
     >
       <div className="flex items-center justify-between mb-3 px-2">
-        <h3 className="text-lg font-semibold text-white">Información general</h3>
-        <label className="flex items-center gap-2 cursor-pointer">
+        <h3 className="text-lg font-semibold text-white">Pronóstico por horas</h3>
+        <label className="flex items-center gap-2 cursor-pointer bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-full transition-colors border border-white/5">
           <div className="relative">
             <input 
               type="checkbox" 
@@ -171,19 +141,23 @@ export default function HourlyForecast() {
               checked={showFeelsLike}
               onChange={() => setShowFeelsLike(!showFeelsLike)}
             />
-            <div className={`block w-10 h-6 rounded-full transition-colors ${showFeelsLike ? 'bg-amber-400' : 'bg-slate-600'}`}></div>
-            <div className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${showFeelsLike ? 'transform translate-x-4' : ''}`}></div>
+            <div className={`block w-10 h-5 rounded-full transition-colors ${showFeelsLike ? 'bg-purple-500/80 shadow-[0_0_10px_rgba(168,85,247,0.4)]' : 'bg-black/30'}`}></div>
+            <div className={`absolute left-1 top-1 bg-white w-3 h-3 rounded-full transition-transform ${showFeelsLike ? 'transform translate-x-5' : ''}`}></div>
           </div>
-          <span className="text-sm text-white/80">Sensación térmica</span>
+          <span className={`text-sm font-medium transition-colors ${showFeelsLike ? 'text-purple-200' : 'text-white/70'}`}>Sensación</span>
         </label>
       </div>
 
-      <div className="overflow-hidden rounded-[2rem] border border-white/10 bg-[#0d1b2e]/90 p-5 shadow-2xl shadow-black/30 backdrop-blur-md">
-        
+      <div className="overflow-hidden rounded-[2rem] border border-white/10 bg-white/10 p-5 shadow-2xl shadow-black/15 backdrop-blur-md">
+        <p className="px-1 pb-5 text-xl font-semibold leading-relaxed text-white">
+          {summary}
+        </p>
+        <div className="h-px bg-white/20 mb-2" />
+
         <div className="relative group">
           <button
             onClick={() => scroll('left')}
-            className={`hidden lg:flex absolute left-0 top-[60%] -translate-y-1/2 z-20 items-center justify-center w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-md text-white transition-opacity duration-300 ${showLeftArrow ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+            className={`hidden lg:flex absolute left-0 top-[45%] -translate-y-1/2 z-20 items-center justify-center w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-md text-white transition-opacity duration-300 ${showLeftArrow ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
             title="Desplazar a la izquierda"
           >
             <ChevronLeft className="w-5 h-5 pr-0.5" />
@@ -191,7 +165,7 @@ export default function HourlyForecast() {
 
           <button
             onClick={() => scroll('right')}
-            className={`hidden lg:flex absolute right-0 top-[60%] -translate-y-1/2 z-20 items-center justify-center w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-md text-white transition-opacity duration-300 ${showRightArrow ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+            className={`hidden lg:flex absolute right-0 top-[45%] -translate-y-1/2 z-20 items-center justify-center w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-md text-white transition-opacity duration-300 ${showRightArrow ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
             title="Desplazar a la derecha"
           >
             <ChevronRight className="w-5 h-5 pl-0.5" />
@@ -200,96 +174,135 @@ export default function HourlyForecast() {
           <div
             ref={scrollRef}
             onScroll={handleScroll}
-            className="overflow-x-auto scrollbar-hide pb-2"
+            className="overflow-x-auto scrollbar-hide"
           >
-            <div style={{ minWidth: `${Math.max(620, chartData.length * 75)}px`, height: '280px' }} className="relative mt-12">
-              <ResponsiveContainer width="100%" height="100%">
-                <ComposedChart
-                  data={chartData}
-                  margin={{ top: 20, right: 30, left: 30, bottom: 10 }}
-                >
-                  <defs>
-                    <linearGradient id="colorTempArea" x1="0" y1="0" x2="1" y2="0">
-                      {chartData.map((h, i) => {
-                        const offset = ((h.dt - minDt) / (maxDt - minDt)) * 100;
-                        return (
+            <div className="pt-6 pb-2" style={{ minWidth: `${Math.max(620, hourly.length * 64)}px` }}>
+              <div
+                className="grid px-5"
+                style={{ gridTemplateColumns: `repeat(${hourly.length}, minmax(0, 1fr))` }}
+              >
+                {hourly.map((hour, index) => (
+                  <motion.div
+                    key={`hour-${hour.dt}-${index}`}
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.12 + index * 0.04, duration: 0.35 }}
+                    className="flex flex-col items-center text-center justify-between h-[100px]"
+                  >
+                    <span className="text-sm font-medium leading-none text-white/75">{hour.hour}</span>
+                    <div className="flex h-10 w-10 items-center justify-center">
+                      {hour.isSunrise ? (
+                        <Sunrise className="w-8 h-8 text-yellow-300 drop-shadow" />
+                      ) : hour.isSunset ? (
+                        <Sunset className="w-8 h-8 text-orange-400 drop-shadow" />
+                      ) : (
+                        weatherIconMap[hour.condition] || <Sun className="w-8 h-8 text-yellow-300 drop-shadow" />
+                      )}
+                    </div>
+                    <div className="flex h-8 items-center justify-center">
+                      {hour.isSunrise ? (
+                        <span className="text-sm font-medium text-white drop-shadow truncate">Amanecer</span>
+                      ) : hour.isSunset ? (
+                        <span className="text-sm font-medium text-white drop-shadow truncate">Atardecer</span>
+                      ) : (
+                        <span className="text-2xl font-semibold leading-none text-white drop-shadow">
+                          {hour.temp}{degree}
+                        </span>
+                      )}
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+
+              <div className="h-28 w-full mt-2 min-w-0">
+                <ResponsiveContainer width="99%" height="100%">
+                  <ComposedChart
+                    data={chartData}
+                    margin={{ top: 16, right: 36, left: 36, bottom: 12 }}
+                  >
+                    <defs>
+                      <linearGradient id="colorTempArea" x1="0" y1="0" x2="1" y2="0">
+                        {chartData.map((h, i) => (
                           <stop 
                             key={i} 
-                            offset={`${offset}%`} 
+                            offset={`${(i / (chartData.length - 1)) * 100}%`} 
                             stopColor={getTempColor(h.temp)} 
                             stopOpacity={0.8} 
                           />
-                        );
-                      })}
-                    </linearGradient>
-                  </defs>
-                  
-                  <XAxis 
-                    dataKey="dt" 
-                    type="number"
-                    domain={['dataMin', 'dataMax']}
-                    orientation="top"
-                    ticks={chartData.filter(h => !h.isSunrise && !h.isSunset).map(h => h.dt)}
-                    tick={<CustomTopTick chartData={chartData} />}
-                    axisLine={false}
-                    tickLine={false}
-                    interval={0}
-                  />
-                  <YAxis hide domain={['dataMin - 5', 'dataMax + 5']} />
-                  <YAxis yAxisId="rain" hide domain={[0, 100]} />
-                  
-                  <Tooltip
-                    content={<CustomTooltip />}
-                    cursor={{ stroke: 'rgba(255,255,255,0.2)', strokeWidth: 1, strokeDasharray: '4 4' }}
-                  />
+                        ))}
+                      </linearGradient>
+                      <filter id="hourlyLineGlow" x="-20%" y="-60%" width="140%" height="220%">
+                        <feGaussianBlur stdDeviation="5" result="blur" />
+                        <feMerge>
+                          <feMergeNode in="blur" />
+                          <feMergeNode in="SourceGraphic" />
+                        </feMerge>
+                      </filter>
+                    </defs>
 
-                  {/* Lluvia background */}
-                  <Bar 
-                    dataKey="rainFull" 
-                    yAxisId="rain"
-                    fill="rgba(59,130,246,0.15)" 
-                    barSize={60}
-                    isAnimationActive={false}
-                  />
-
-                  {/* Area chart para temperatura */}
-                  <Area
-                    type="monotone"
-                    dataKey="temp"
-                    stroke="#ffffff"
-                    strokeWidth={2}
-                    fillOpacity={1}
-                    fill="url(#colorTempArea)"
-                    dot={<CustomChartDot />}
-                    activeDot={{ r: 6, fill: '#fff', stroke: '#f59e0b', strokeWidth: 2 }}
-                    isAnimationActive
-                    animationDuration={1500}
-                  />
-
-                  {/* Sensacion termica */}
-                  {showFeelsLike && (
-                    <Line
-                      type="monotone"
-                      dataKey="feels_like"
-                      stroke="#d8b4fe"
-                      strokeWidth={2}
-                      strokeDasharray="5 5"
-                      dot={false}
-                      activeDot={false}
-                      isAnimationActive
+                    <XAxis dataKey="time" hide />
+                    <YAxis hide domain={['dataMin - 3', 'dataMax + 3']} />
+                    <YAxis yAxisId="rain" hide domain={[0, 100]} />
+                    
+                    <Tooltip
+                      content={<CustomTooltip />}
+                      cursor={{ stroke: 'rgba(255,255,255,0.2)', strokeWidth: 1, strokeDasharray: '4 4' }}
                     />
-                  )}
-                </ComposedChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        </div>
 
-        {/* Footer bar */}
-        <div className="mt-4 pt-3 border-t border-white/10 flex items-center justify-end">
-          <div className="flex items-center gap-1.5 text-blue-300 font-medium bg-blue-500/10 px-3 py-1 rounded-full text-sm">
-            <Droplets className="w-4 h-4" />
-            <span>Probabilidad máxima de lluvia: {maxPop}%</span>
+                    {/* Lluvia background */}
+                    <Bar 
+                      dataKey="rainFull" 
+                      yAxisId="rain"
+                      fill="rgba(59,130,246,0.15)" 
+                      barSize={40}
+                      isAnimationActive={false}
+                    />
+
+                    <Area
+                      type="monotone"
+                      dataKey="temp"
+                      stroke="#ffffff"
+                      strokeWidth={3}
+                      fillOpacity={1}
+                      fill="url(#colorTempArea)"
+                      dot={renderCustomDot}
+                      activeDot={renderActiveDot}
+                      isAnimationActive
+                      animationDuration={1200}
+                    />
+
+                    {showFeelsLike && (
+                      <Line
+                        type="monotone"
+                        dataKey="feels_like"
+                        stroke="#d8b4fe"
+                        strokeWidth={2}
+                        strokeDasharray="5 5"
+                        dot={false}
+                        activeDot={false}
+                        isAnimationActive
+                      />
+                    )}
+                  </ComposedChart>
+                </ResponsiveContainer>
+              </div>
+
+              <div
+                className="grid px-5 pt-2"
+                style={{ gridTemplateColumns: `repeat(${hourly.length}, minmax(0, 1fr))` }}
+              >
+                {hourly.map((hour, index) => (
+                  <div key={`rain-${hour.dt}-${index}`} className="flex items-center justify-center gap-1 text-xs font-medium text-white/70">
+                    {hour.isSunrise || hour.isSunset ? null : (
+                      <>
+                        <Droplets className="h-3 w-3 fill-sky-200/50 text-sky-200/70" />
+                        {hour.rainProbability}%
+                      </>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </div>
