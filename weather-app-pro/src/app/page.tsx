@@ -43,7 +43,7 @@ export default function Home() {
         <div className="sticky top-0 z-20 bg-white/5 backdrop-blur-lg border-b border-white/10 px-4 py-4">
           <div className="max-w-md mx-auto">
             <div className="flex items-center justify-between mb-3">
-              <h1 className="text-xl font-bold text-white">Weather Pro</h1>
+              <h1 className="text-xl font-bold text-white">Climix</h1>
               {currentWeather && (
                 <motion.button
                   whileHover={{ scale: 1.1 }}
@@ -108,7 +108,7 @@ export default function Home() {
                 >
                   <CloudSun className="w-20 h-20 mx-auto mb-4 text-white/80" />
                   <h2 className="text-xl font-semibold text-white mb-2">
-                    Bienvenido a Weather Pro
+                    Bienvenido a Climix
                   </h2>
                   <p className="text-white/60 mb-4">
                     Busca una ciudad o usa tu ubicacion para comenzar

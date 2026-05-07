@@ -1,6 +1,6 @@
-# Weather App Pro
+# Climix
 
-Weather App Pro es una aplicacion web mobile-first para consultar clima actual, pronostico por horas, proximos dias y ciudades favoritas.
+Climix es una aplicacion web mobile-first para consultar clima actual, pronostico por horas, proximos dias y ciudades favoritas.
 
 ## Features
 
@@ -9,7 +9,7 @@ Weather App Pro es una aplicacion web mobile-first para consultar clima actual, 
 - Geolocalizacion desde el navegador.
 - Fondo dinamico segun el clima.
 - Temperatura principal con sensacion termica, humedad, viento, visibilidad, presion e indice UV.
-- Pronostico por horas con grafico.
+- Pronostico por horas con grafico de linea dinamico, etiquetas sobre la curva y eje horario integrado.
 - Pronostico de proximos dias.
 - Favoritos persistidos con localStorage.
 - Loading state con skeletons.
