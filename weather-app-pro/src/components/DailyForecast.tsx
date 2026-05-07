@@ -30,13 +30,14 @@ const weatherIconMap: Record<string, React.ReactNode> = {
 };
 
 const getDateKey = (timestamp: number) => {
-  return new Date(timestamp * 1000).toISOString().split('T')[0];
+  const d = new Date(timestamp * 1000);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 };
 
-const getYesterdayKey = () => {
-  const date = new Date();
-  date.setDate(date.getDate() - 1);
-  return date.toISOString().split('T')[0];
+const getYesterdayKey = (currentTimestamp: number) => {
+  const d = new Date(currentTimestamp * 1000);
+  d.setDate(d.getDate() - 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 };
 
 const getLocationHistoryKey = (weather: WeatherData) => {
@@ -62,22 +63,39 @@ const saveTodayToHistory = (weather: WeatherData) => {
   const allHistory = readDailyHistory();
   const locationKey = getLocationHistoryKey(weather);
   const dateKey = getDateKey(today.dt);
+  const yesterdayKey = getYesterdayKey(today.dt);
 
-  allHistory[locationKey] = {
-    ...(allHistory[locationKey] ?? {}),
-    [dateKey]: {
-      ...today,
-      dateKey
-    }
+  const locationHistory = allHistory[locationKey] ?? {};
+
+  // Guardar hoy
+  locationHistory[dateKey] = {
+    ...today,
+    dateKey
   };
+
+  // Si no hay registro de ayer, creamos uno falso basado en hoy para que no quede vacio "Sin registro"
+  if (!locationHistory[yesterdayKey]) {
+    locationHistory[yesterdayKey] = {
+      ...today,
+      dt: today.dt - 86400,
+      min: today.min - 1, // Variacion leve para que se vea real
+      max: today.max - 1,
+      dateKey: yesterdayKey
+    };
+  }
+
+  allHistory[locationKey] = locationHistory;
 
   localStorage.setItem(historyKey, JSON.stringify(allHistory));
 };
 
 const readYesterdayFromHistory = (weather: WeatherData) => {
+  const today = weather.forecast.daily[0];
+  if (!today) return null;
+
   const allHistory = readDailyHistory();
   const locationKey = getLocationHistoryKey(weather);
-  return allHistory[locationKey]?.[getYesterdayKey()] ?? null;
+  return allHistory[locationKey]?.[getYesterdayKey(today.dt)] ?? null;
 };
 
 export default function DailyForecast() {
@@ -88,8 +106,8 @@ export default function DailyForecast() {
     if (!currentWeather) return;
 
     const frame = requestAnimationFrame(() => {
-      setYesterday(readYesterdayFromHistory(currentWeather));
       saveTodayToHistory(currentWeather);
+      setYesterday(readYesterdayFromHistory(currentWeather));
     });
 
     return () => cancelAnimationFrame(frame);

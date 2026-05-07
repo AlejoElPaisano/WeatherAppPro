@@ -10,7 +10,7 @@ import {
   XAxis,
   YAxis
 } from 'recharts';
-import { Sun, Cloud, CloudRain, Snowflake, CloudLightning, Droplets } from 'lucide-react';
+import { Sun, Cloud, CloudRain, Snowflake, CloudLightning, Droplets, Sunrise, Sunset } from 'lucide-react';
 
 const degree = '\u00B0';
 const lineColor = '#facc15';
@@ -24,6 +24,8 @@ const weatherIconMap: Record<string, React.ReactNode> = {
   Drizzle: <CloudRain className="w-8 h-8 text-blue-200 drop-shadow" />,
   Mist: <Cloud className="w-8 h-8 text-gray-200 drop-shadow" />
 };
+
+const capitalize = (str: string) => str.charAt(0).toUpperCase() + str.slice(1);
 
 export default function HourlyForecast() {
   const { currentWeather } = useWeatherStore();
@@ -41,8 +43,8 @@ export default function HourlyForecast() {
   }));
 
   const summary = today
-    ? `${current.description}. Maximas entre ${today.max - 1} y ${today.max + 1} C y minimas entre ${Math.max(today.min - 1, -20)} y ${today.min + 1} C.`
-    : current.description;
+    ? `${capitalize(current.description)}. Maximas entre ${today.max - 1} y ${today.max + 1} C y minimas entre ${Math.max(today.min - 1, -20)} y ${today.min + 1} C.`
+    : capitalize(current.description);
 
   return (
     <motion.div
@@ -60,7 +62,7 @@ export default function HourlyForecast() {
         <div className="h-px bg-white/20" />
 
         <div className="overflow-x-auto scrollbar-hide">
-          <div className="min-w-[620px] pt-6">
+          <div className="pt-6" style={{ minWidth: `${Math.max(620, hourly.length * 70)}px` }}>
             <div
               className="grid px-5"
               style={{ gridTemplateColumns: `repeat(${hourly.length}, minmax(0, 1fr))` }}
@@ -73,6 +75,20 @@ export default function HourlyForecast() {
                   transition={{ delay: 0.12 + index * 0.04, duration: 0.35 }}
                   className="flex flex-col items-center text-center"
                 >
+                  {/* Sunrise/Sunset indicator */}
+                  {hour.sunrise && (
+                    <div className="flex flex-col items-center mb-2 text-yellow-300">
+                      <Sunrise className="w-5 h-5" />
+                      <span className="text-xs font-medium">Amanecer</span>
+                    </div>
+                  )}
+                  {hour.sunset && (
+                    <div className="flex flex-col items-center mb-2 text-orange-300">
+                      <Sunset className="w-5 h-5" />
+                      <span className="text-xs font-medium">Atardecer</span>
+                    </div>
+                  )}
+
                   <span className="mb-5 text-base font-medium leading-none text-white/75">{hour.hour}</span>
                   <div className="mb-4 flex h-9 items-center justify-center">
                     {weatherIconMap[hour.condition] || <Sun className="w-8 h-8 text-yellow-300 drop-shadow" />}

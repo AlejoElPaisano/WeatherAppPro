@@ -25,6 +25,12 @@ interface OpenWeatherCondition {
   icon: string;
 }
 
+interface OpenWeatherSys {
+  country: string;
+  sunrise: number;
+  sunset: number;
+}
+
 interface OpenWeatherCurrentResponse {
   dt: number;
   name: string;
@@ -35,15 +41,19 @@ interface OpenWeatherCurrentResponse {
     humidity: number;
     pressure: number;
   };
-  sys: {
-    country: string;
-    sunrise: number;
-    sunset: number;
-  };
+  sys: OpenWeatherSys;
   wind: {
     speed: number;
   };
   weather: OpenWeatherCondition[];
+}
+
+interface OpenWeatherCity {
+  id: number;
+  name: string;
+  country: string;
+  sunrise: number;
+  sunset: number;
 }
 
 interface OpenWeatherForecastItem {
@@ -59,6 +69,7 @@ interface OpenWeatherForecastItem {
 }
 
 interface OpenWeatherForecastResponse {
+  city: OpenWeatherCity;
   list: OpenWeatherForecastItem[];
 }
 
@@ -120,7 +131,11 @@ const normalizeWeatherData = (
     icon: currentCondition.icon
   };
 
-  const dailyMap = new Map<string, DailyForecast>();
+  const citySunrise = forecastData.city?.sunrise ?? weatherData.sys.sunrise;
+  const citySunset = forecastData.city?.sunset ?? weatherData.sys.sunset;
+
+  // Grupo forecast por dia para agregacion correcta de min/max
+  const dailyMap = new Map<string, DailyForecast & { allItems: { temp: number; pop?: number }[] }>();
 
   forecastData.list.forEach((item) => {
     const date = new Date(item.dt * 1000);
@@ -135,40 +150,113 @@ const normalizeWeatherData = (
         max: Math.round(item.main.temp_max),
         condition: itemCondition.main,
         icon: itemCondition.icon,
-        rainProbability: item.pop ? Math.round(item.pop * 100) : 0
+        rainProbability: item.pop ? Math.round(item.pop * 100) : 0,
+        allItems: [{ temp: item.main.temp, pop: item.pop }]
       });
       return;
     }
 
-    const existing = dailyMap.get(dayKey);
-
-    if (existing) {
-      existing.min = Math.min(existing.min, Math.round(item.main.temp_min));
-      existing.max = Math.max(existing.max, Math.round(item.main.temp_max));
-      existing.rainProbability = Math.max(existing.rainProbability, item.pop ? Math.round(item.pop * 100) : 0);
-    }
+    const existing = dailyMap.get(dayKey)!;
+    existing.allItems.push({ temp: item.main.temp, pop: item.pop });
+    existing.min = Math.min(existing.min, Math.round(item.main.temp_min));
+    existing.max = Math.max(existing.max, Math.round(item.main.temp_max));
+    existing.rainProbability = Math.max(existing.rainProbability, item.pop ? Math.round(item.pop * 100) : 0);
   });
 
-  const hourly: HourlyForecast[] = forecastData.list.slice(0, 8).map((item) => {
-    const date = new Date(item.dt * 1000);
-    const itemCondition = item.weather[0] ?? currentCondition;
+  // Generar hourly con interpolacion para mostrar por hora completa
+  const rawHourly = forecastData.list.slice(0, 8);
+  const interpolatedHourly: HourlyForecast[] = [];
 
-    return {
-      dt: item.dt,
-      hour: date.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }),
-      temp: Math.round(item.main.temp),
-      humidity: item.main.humidity,
+  for (let i = 0; i < rawHourly.length - 1; i++) {
+    const currentItem = rawHourly[i];
+    const nextItem = rawHourly[i + 1];
+
+    const currentDate = new Date(currentItem.dt * 1000);
+    const nextDate = new Date(nextItem.dt * 1000);
+    const itemCondition = currentItem.weather[0] ?? currentCondition;
+
+    const currentHour = currentDate.getHours();
+    const nextHour = nextDate.getHours();
+    // Handle day wrap correctly for hour difference
+    const hourDiff = nextHour < currentHour ? (nextHour + 24) - currentHour : nextHour - currentHour;
+
+    // Agregar la hora actual
+    interpolatedHourly.push({
+      dt: currentItem.dt,
+      hour: currentDate.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }),
+      temp: Math.round(currentItem.main.temp),
+      humidity: currentItem.main.humidity,
       condition: itemCondition.main,
       icon: itemCondition.icon,
-      rainProbability: item.pop ? Math.round(item.pop * 100) : 0
+      rainProbability: currentItem.pop ? Math.round(currentItem.pop * 100) : 0,
+      sunrise: undefined,
+      sunset: undefined
+    });
+
+    // Interpolar horas intermedias
+    if (hourDiff > 1 && hourDiff <= 4) { // Only interpolate up to 4 hours gaps (usually it's 3)
+      for (let h = 1; h < hourDiff; h++) {
+        const interpolatedTemp = Math.round(currentItem.main.temp + ((nextItem.main.temp - currentItem.main.temp) * h / hourDiff));
+        const interpolatedHumidity = Math.round(currentItem.main.humidity + ((nextItem.main.humidity - currentItem.main.humidity) * h / hourDiff));
+        const interpolatedPop = currentItem.pop !== undefined && nextItem.pop !== undefined
+          ? Math.round((currentItem.pop + (nextItem.pop - currentItem.pop) * h / hourDiff) * 100)
+          : (currentItem.pop ? Math.round(currentItem.pop * 100) : 0);
+
+        const interpolatedDate = new Date(currentDate);
+        interpolatedDate.setHours(currentHour + h);
+
+        interpolatedHourly.push({
+          dt: Math.floor(interpolatedDate.getTime() / 1000),
+          hour: interpolatedDate.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }),
+          temp: interpolatedTemp,
+          humidity: interpolatedHumidity,
+          condition: itemCondition.main,
+          icon: itemCondition.icon,
+          rainProbability: interpolatedPop,
+          sunrise: undefined,
+          sunset: undefined
+        });
+      }
+    }
+  }
+
+  // Agregar el ultimo item
+  if (rawHourly.length > 0) {
+    const lastItem = rawHourly[rawHourly.length - 1];
+    const lastDate = new Date(lastItem.dt * 1000);
+    const lastCondition = lastItem.weather[0] ?? currentCondition;
+    interpolatedHourly.push({
+      dt: lastItem.dt,
+      hour: lastDate.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }),
+      temp: Math.round(lastItem.main.temp),
+      humidity: lastItem.main.humidity,
+      condition: lastCondition.main,
+      icon: lastCondition.icon,
+      rainProbability: lastItem.pop ? Math.round(lastItem.pop * 100) : 0,
+      sunrise: undefined,
+      sunset: undefined
+    });
+  }
+
+  const hourlyWithSunTimes = interpolatedHourly.map((item) => {
+    const itemDate = new Date(item.dt * 1000);
+    const itemHour = itemDate.getHours();
+
+    const sunriseDate = new Date(citySunrise * 1000);
+    const sunsetDate = new Date(citySunset * 1000);
+
+    return {
+      ...item,
+      sunrise: Math.abs(itemHour - sunriseDate.getHours()) <= 0.5 ? citySunrise : undefined,
+      sunset: Math.abs(itemHour - sunsetDate.getHours()) <= 0.5 ? citySunset : undefined
     };
   });
 
   return {
     current,
     forecast: {
-      daily: Array.from(dailyMap.values()).slice(0, 7),
-      hourly
+      daily: Array.from(dailyMap.values()).map(({ allItems, ...rest }) => rest).slice(0, 7),
+      hourly: hourlyWithSunTimes
     },
     location
   };
