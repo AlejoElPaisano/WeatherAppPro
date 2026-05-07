@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 
 export default function SkeletonLoader() {
   return (
-    <div className="w-full max-w-md mx-auto space-y-4">
+    <div className="w-full space-y-4">
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -39,7 +39,7 @@ export function ShimmerCard() {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="w-full max-w-md mx-auto"
+      className="w-full"
     >
       <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/10 overflow-hidden relative">
         <div className="absolute inset-0 -translate-x-full animate-shimmer bg-gradient-to-r from-transparent via-white/5 to-transparent" />

@@ -141,7 +141,7 @@ export default function DailyForecast() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.2 }}
-      className="w-full max-w-md mx-auto mt-6"
+      className="w-full"
     >
       <h3 className="text-lg font-semibold text-white mb-3 px-2">Proximos dias</h3>
       <div className="rounded-[2rem] border border-white/10 bg-white/10 p-5 shadow-2xl shadow-black/15 backdrop-blur-md">

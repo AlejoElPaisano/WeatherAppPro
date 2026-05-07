@@ -46,7 +46,7 @@ export default function TemperatureCard() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="relative w-full max-w-md mx-auto"
+      className="relative w-full"
     >
       <div className="text-center mb-6">
         <motion.div
