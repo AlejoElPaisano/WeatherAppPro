@@ -11,6 +11,7 @@ import HourlyForecast from '@/components/HourlyForecast';
 import WeatherBackground from '@/components/WeatherBackground';
 import Favorites from '@/components/Favorites';
 import SkeletonLoader from '@/components/SkeletonLoader';
+import SideNav from '@/components/SideNav';
 import { useWeatherStore } from '@/store/weatherStore';
 import { useGeolocation } from '@/hooks/useWeather';
 
@@ -97,8 +98,9 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="px-4 pt-6">
-          <div className="max-w-md mx-auto lg:max-w-5xl">
+        <div className="px-4 pt-6 max-w-[90rem] mx-auto flex flex-col lg:flex-row gap-6">
+          <SideNav />
+          <div className="flex-1 min-w-0">
             <AnimatePresence>
               {error && (
                 <motion.div
@@ -131,13 +133,13 @@ export default function Home() {
                   className="flex flex-col gap-6 pb-20 lg:grid lg:grid-cols-12 lg:gap-8 lg:items-start"
                 >
                   <div className="contents lg:block lg:col-span-5 space-y-6 lg:sticky lg:top-32">
-                    <div className="order-1 lg:order-none"><TemperatureCard /></div>
-                    <div className="order-4 lg:order-none"><WeatherDetails /></div>
+                    <div id="actual" className="order-1 lg:order-none scroll-mt-24"><TemperatureCard /></div>
+                    <div id="details" className="order-4 lg:order-none scroll-mt-24"><WeatherDetails /></div>
                   </div>
                   <div className="contents lg:block lg:col-span-7 space-y-6">
-                    <div className="order-2 lg:order-none"><HourlyForecast /></div>
-                    <div className="order-3 lg:order-none"><DailyForecast /></div>
-                    <div className="order-5 lg:order-none"><Favorites /></div>
+                    <div id="hourly" className="order-2 lg:order-none scroll-mt-24"><HourlyForecast /></div>
+                    <div id="monthly" className="order-3 lg:order-none scroll-mt-24"><DailyForecast /></div>
+                    <div id="trends" className="order-5 lg:order-none scroll-mt-24"><Favorites /></div>
                   </div>
                 </motion.div>
               ) : (
