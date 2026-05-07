@@ -127,8 +127,8 @@ export default function DailyForecast() {
     const yesterdayRow: ForecastRow = {
       ...yesterdaySource,
       label: 'Ayer',
-      muted: !yesterday,
-      unavailable: !yesterday
+      muted: true,
+      unavailable: false
     };
 
     return [yesterdayRow, ...dailyRows];
@@ -150,26 +150,29 @@ export default function DailyForecast() {
             <motion.div
               key={`${day.label}-${day.dt}-${index}`}
               initial={{ opacity: 0, x: -16 }}
-              animate={{ opacity: day.muted ? 0.52 : 1, x: 0 }}
+              animate={{ opacity: day.muted ? 0.45 : 1, x: 0 }}
               transition={{ delay: index * 0.06 }}
               className="grid grid-cols-[4.5rem_4rem_1fr_5.25rem] items-center gap-2"
             >
               <span className="text-2xl font-semibold capitalize text-white">{day.label}</span>
 
               <span className="flex items-center gap-1 text-sm font-medium text-white/70">
-                <Droplets className="h-4 w-4 fill-sky-100/50 text-sky-100/70" />
-                {day.unavailable ? '--' : `${day.rainProbability}%`}
+                {!day.muted && !day.unavailable && (
+                  <>
+                    <Droplets className="h-4 w-4 fill-sky-100/50 text-sky-100/70" />
+                    {day.rainProbability}%
+                  </>
+                )}
               </span>
 
               <div className="flex items-center justify-center gap-4">
-                {day.unavailable ? (
-                  <span className="text-sm text-white/55">Sin registro</span>
-                ) : (
+                {!day.muted && !day.unavailable && (
                   <>
                     {weatherIconMap[day.condition] || <Sun className="w-7 h-7 text-yellow-300 drop-shadow" />}
                     <Moon className="w-7 h-7 text-slate-100/90 drop-shadow" />
                   </>
                 )}
+                {day.unavailable && <span className="text-sm text-white/55">Sin registro</span>}
               </div>
 
               <div className="flex justify-end gap-3 text-2xl font-semibold text-white">

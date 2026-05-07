@@ -46,6 +46,18 @@ export default function HourlyForecast() {
     ? `${capitalize(current.description)}. Maximas entre ${today.max - 1} y ${today.max + 1} C y minimas entre ${Math.max(today.min - 1, -20)} y ${today.min + 1} C.`
     : capitalize(current.description);
 
+  const renderCustomDot = (props: any) => {
+    const { cx, cy, payload } = props;
+    if (payload.isSunrise || payload.isSunset) return null;
+    return <circle cx={cx} cy={cy} r={4} fill="#ffffff" stroke="#ffffff" strokeWidth={1} />;
+  };
+
+  const renderActiveDot = (props: any) => {
+    const { cx, cy, payload } = props;
+    if (payload.isSunrise || payload.isSunset) return null;
+    return <circle cx={cx} cy={cy} r={6} fill="#ffffff" stroke={lineColor} strokeWidth={3} />;
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -62,45 +74,45 @@ export default function HourlyForecast() {
         <div className="h-px bg-white/20" />
 
         <div className="overflow-x-auto scrollbar-hide">
-          <div className="pt-6" style={{ minWidth: `${Math.max(620, hourly.length * 70)}px` }}>
+          <div className="pt-6 pb-2" style={{ minWidth: `${Math.max(620, hourly.length * 64)}px` }}>
             <div
               className="grid px-5"
               style={{ gridTemplateColumns: `repeat(${hourly.length}, minmax(0, 1fr))` }}
             >
               {hourly.map((hour, index) => (
                 <motion.div
-                  key={hour.dt}
+                  key={`hour-${hour.dt}-${index}`}
                   initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.12 + index * 0.04, duration: 0.35 }}
-                  className="flex flex-col items-center text-center"
+                  className="flex flex-col items-center text-center justify-between h-[100px]"
                 >
-                  {/* Sunrise/Sunset indicator */}
-                  {hour.sunrise && (
-                    <div className="flex flex-col items-center mb-2 text-yellow-300">
-                      <Sunrise className="w-5 h-5" />
-                      <span className="text-xs font-medium">Amanecer</span>
-                    </div>
-                  )}
-                  {hour.sunset && (
-                    <div className="flex flex-col items-center mb-2 text-orange-300">
-                      <Sunset className="w-5 h-5" />
-                      <span className="text-xs font-medium">Atardecer</span>
-                    </div>
-                  )}
-
-                  <span className="mb-5 text-base font-medium leading-none text-white/75">{hour.hour}</span>
-                  <div className="mb-4 flex h-9 items-center justify-center">
-                    {weatherIconMap[hour.condition] || <Sun className="w-8 h-8 text-yellow-300 drop-shadow" />}
+                  <span className="text-sm font-medium leading-none text-white/75">{hour.hour}</span>
+                  <div className="flex h-10 w-10 items-center justify-center">
+                    {hour.isSunrise ? (
+                      <Sunrise className="w-8 h-8 text-yellow-300 drop-shadow" />
+                    ) : hour.isSunset ? (
+                      <Sunset className="w-8 h-8 text-orange-400 drop-shadow" />
+                    ) : (
+                      weatherIconMap[hour.condition] || <Sun className="w-8 h-8 text-yellow-300 drop-shadow" />
+                    )}
                   </div>
-                  <span className="text-4xl font-semibold leading-none text-white drop-shadow">
-                    {hour.temp}{degree}
-                  </span>
+                  <div className="flex h-8 items-center justify-center">
+                    {hour.isSunrise ? (
+                      <span className="text-sm font-medium text-white drop-shadow truncate">Amanecer</span>
+                    ) : hour.isSunset ? (
+                      <span className="text-sm font-medium text-white drop-shadow truncate">Atardecer</span>
+                    ) : (
+                      <span className="text-2xl font-semibold leading-none text-white drop-shadow">
+                        {hour.temp}{degree}
+                      </span>
+                    )}
+                  </div>
                 </motion.div>
               ))}
             </div>
 
-            <div className="h-20 w-full">
+            <div className="h-20 w-full mt-2">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart
                   data={chartData}
@@ -135,8 +147,8 @@ export default function HourlyForecast() {
                     strokeWidth={4}
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    dot={{ r: 4, fill: '#ffffff', stroke: '#ffffff', strokeWidth: 1 }}
-                    activeDot={{ r: 6, fill: '#ffffff', stroke: lineColor, strokeWidth: 3 }}
+                    dot={renderCustomDot}
+                    activeDot={renderActiveDot}
                     filter="url(#hourlyLineGlow)"
                     isAnimationActive
                     animationDuration={1200}
@@ -150,10 +162,14 @@ export default function HourlyForecast() {
               className="grid px-5 pt-2"
               style={{ gridTemplateColumns: `repeat(${hourly.length}, minmax(0, 1fr))` }}
             >
-              {hourly.map((hour) => (
-                <div key={`rain-${hour.dt}`} className="flex items-center justify-center gap-1 text-base font-medium text-white/70">
-                  <Droplets className="h-5 w-5 fill-sky-200/50 text-sky-200/70" />
-                  {hour.rainProbability}%
+              {hourly.map((hour, index) => (
+                <div key={`rain-${hour.dt}-${index}`} className="flex items-center justify-center gap-1 text-xs font-medium text-white/70">
+                  {hour.isSunrise || hour.isSunset ? null : (
+                    <>
+                      <Droplets className="h-3 w-3 fill-sky-200/50 text-sky-200/70" />
+                      {hour.rainProbability}%
+                    </>
+                  )}
                 </div>
               ))}
             </div>

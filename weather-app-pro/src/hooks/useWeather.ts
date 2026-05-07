@@ -189,8 +189,8 @@ const normalizeWeatherData = (
       condition: itemCondition.main,
       icon: itemCondition.icon,
       rainProbability: currentItem.pop ? Math.round(currentItem.pop * 100) : 0,
-      sunrise: undefined,
-      sunset: undefined
+      isSunrise: undefined,
+      isSunset: undefined
     });
 
     // Interpolar horas intermedias
@@ -213,8 +213,8 @@ const normalizeWeatherData = (
           condition: itemCondition.main,
           icon: itemCondition.icon,
           rainProbability: interpolatedPop,
-          sunrise: undefined,
-          sunset: undefined
+          isSunrise: undefined,
+          isSunset: undefined
         });
       }
     }
@@ -233,30 +233,68 @@ const normalizeWeatherData = (
       condition: lastCondition.main,
       icon: lastCondition.icon,
       rainProbability: lastItem.pop ? Math.round(lastItem.pop * 100) : 0,
-      sunrise: undefined,
-      sunset: undefined
     });
   }
 
-  const hourlyWithSunTimes = interpolatedHourly.map((item) => {
-    const itemDate = new Date(item.dt * 1000);
-    const itemHour = itemDate.getHours();
+  const sunEvents: HourlyForecast[] = [];
+  const sunriseDate = new Date(citySunrise * 1000);
+  const sunsetDate = new Date(citySunset * 1000);
 
-    const sunriseDate = new Date(citySunrise * 1000);
-    const sunsetDate = new Date(citySunset * 1000);
-
-    return {
-      ...item,
-      sunrise: Math.abs(itemHour - sunriseDate.getHours()) <= 0.5 ? citySunrise : undefined,
-      sunset: Math.abs(itemHour - sunsetDate.getHours()) <= 0.5 ? citySunset : undefined
-    };
+  sunEvents.push({
+    dt: citySunrise,
+    hour: sunriseDate.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }),
+    temp: 0,
+    humidity: 0,
+    condition: 'Clear',
+    icon: '01d',
+    rainProbability: 0,
+    isSunrise: true
   });
+
+  sunEvents.push({
+    dt: citySunset,
+    hour: sunsetDate.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }),
+    temp: 0,
+    humidity: 0,
+    condition: 'Clear',
+    icon: '01n',
+    rainProbability: 0,
+    isSunset: true
+  });
+
+  const startTime = interpolatedHourly[0].dt;
+  const endTime = interpolatedHourly[interpolatedHourly.length - 1].dt;
+
+  const combined = [...interpolatedHourly, ...sunEvents]
+    .sort((a, b) => a.dt - b.dt)
+    .filter(item => item.dt >= startTime && item.dt <= endTime);
+
+  for (let i = 0; i < combined.length; i++) {
+    if (combined[i].isSunrise || combined[i].isSunset) {
+      const prev = combined.slice(0, i).reverse().find(x => !x.isSunrise && !x.isSunset);
+      const next = combined.slice(i + 1).find(x => !x.isSunrise && !x.isSunset);
+      if (prev && next) {
+        const ratio = (combined[i].dt - prev.dt) / (next.dt - prev.dt);
+        combined[i].temp = Math.round(prev.temp + (next.temp - prev.temp) * ratio);
+        combined[i].humidity = Math.round(prev.humidity + (next.humidity - prev.humidity) * ratio);
+        combined[i].rainProbability = Math.round(prev.rainProbability + (next.rainProbability - prev.rainProbability) * ratio);
+      } else if (prev) {
+        combined[i].temp = prev.temp;
+        combined[i].humidity = prev.humidity;
+        combined[i].rainProbability = prev.rainProbability;
+      } else if (next) {
+        combined[i].temp = next.temp;
+        combined[i].humidity = next.humidity;
+        combined[i].rainProbability = next.rainProbability;
+      }
+    }
+  }
 
   return {
     current,
     forecast: {
       daily: Array.from(dailyMap.values()).map(({ allItems, ...rest }) => rest).slice(0, 7),
-      hourly: hourlyWithSunTimes
+      hourly: combined
     },
     location
   };

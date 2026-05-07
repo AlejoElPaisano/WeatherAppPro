@@ -40,8 +40,8 @@ export interface HourlyForecast {
   condition: string;
   icon: string;
   rainProbability: number;
-  sunrise?: number;
-  sunset?: number;
+  isSunrise?: boolean;
+  isSunset?: boolean;
 }
 
 export interface LocationData {
