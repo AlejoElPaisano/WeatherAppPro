@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Image from 'next/image';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useWeatherStore } from '@/store/weatherStore';
 
@@ -16,27 +15,7 @@ interface Particle {
   drift: number;
 }
 
-const WEATHER_BACKGROUNDS: Record<string, string> = {
-  Clear: 'https://source.unsplash.com/1600x2400/?clear-sky,sunlight',
-  Night: 'https://source.unsplash.com/1600x2400/?night-sky,stars',
-  Clouds: 'https://source.unsplash.com/1600x2400/?cloudy-sky,clouds',
-  Rain: 'https://source.unsplash.com/1600x2400/?rain,city',
-  Drizzle: 'https://source.unsplash.com/1600x2400/?drizzle,rain',
-  Snow: 'https://source.unsplash.com/1600x2400/?snow,winter',
-  Thunderstorm: 'https://source.unsplash.com/1600x2400/?thunderstorm,lightning',
-  Mist: 'https://source.unsplash.com/1600x2400/?mist,fog',
-  sunny: 'https://source.unsplash.com/1600x2400/?clear-sky,sunlight',
-  clear: 'https://source.unsplash.com/1600x2400/?clear-sky,sunlight',
-  night: 'https://source.unsplash.com/1600x2400/?night-sky,stars',
-  cloudy: 'https://source.unsplash.com/1600x2400/?cloudy-sky,clouds',
-  rain: 'https://source.unsplash.com/1600x2400/?rain,city',
-  snow: 'https://source.unsplash.com/1600x2400/?snow,winter',
-  thunderstorm: 'https://source.unsplash.com/1600x2400/?thunderstorm,lightning'
-};
 
-const getWeatherBackground = (weatherType: string) => {
-  return WEATHER_BACKGROUNDS[weatherType] || WEATHER_BACKGROUNDS.Clear;
-};
 
 const buildParticles = (weatherType: string): Particle[] => {
   const particleCount = weatherType === 'snow' || weatherType === 'rain'
@@ -67,7 +46,6 @@ export default function WeatherBackground() {
   const { weatherType } = useWeatherStore();
   const [mounted, setMounted] = useState(false);
   const [particles, setParticles] = useState<Particle[]>([]);
-  const backgroundImage = getWeatherBackground(weatherType);
 
   useEffect(() => {
     const frame = requestAnimationFrame(() => {
@@ -116,15 +94,7 @@ export default function WeatherBackground() {
           exit={{ opacity: 0, scale: 1.02 }}
           transition={{ duration: 0.9, ease: 'easeInOut' }}
         >
-          <Image
-            src={backgroundImage}
-            alt=""
-            fill
-            priority
-            sizes="100vw"
-            style={{ objectFit: 'cover' }}
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/45 via-black/40 to-black/65 backdrop-blur-sm" />
+          <div className="absolute inset-0 bg-black/20 backdrop-blur-[2px]" />
         </motion.div>
       </AnimatePresence>
 

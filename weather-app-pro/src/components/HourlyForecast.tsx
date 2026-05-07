@@ -112,8 +112,8 @@ export default function HourlyForecast() {
               ))}
             </div>
 
-            <div className="h-20 w-full mt-2">
-              <ResponsiveContainer width="100%" height="100%">
+            <div className="h-20 w-full mt-2 min-w-0">
+              <ResponsiveContainer width="99%" height="100%">
                 <LineChart
                   data={chartData}
                   margin={{ top: 16, right: 36, left: 36, bottom: 12 }}

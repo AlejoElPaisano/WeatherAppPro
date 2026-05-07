@@ -15,7 +15,7 @@ import { useWeatherStore } from '@/store/weatherStore';
 import { useGeolocation } from '@/hooks/useWeather';
 
 export default function Home() {
-  const { currentWeather, loading, error, addFavorite, clearWeather, searchResetKey } = useWeatherStore();
+  const { currentWeather, loading, error, addFavorite, removeFavorite, clearWeather, searchResetKey, favorites } = useWeatherStore();
   const { searchByLocation } = useGeolocation();
 
   useEffect(() => {
@@ -30,9 +30,15 @@ export default function Home() {
     loadInitialLocation();
   }, [searchByLocation]);
 
-  const handleAddFavorite = () => {
+  const isFavorite = currentWeather?.location.city ? favorites.includes(currentWeather.location.city) : false;
+
+  const handleToggleFavorite = () => {
     if (currentWeather?.location.city) {
-      addFavorite(currentWeather.location.city);
+      if (isFavorite) {
+        removeFavorite(currentWeather.location.city);
+      } else {
+        addFavorite(currentWeather.location.city);
+      }
     }
   };
 
@@ -72,12 +78,16 @@ export default function Home() {
               {currentWeather && (
                 <motion.button
                   whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                  onClick={handleAddFavorite}
-                  className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
-                  title="Agregar a favoritos"
+                  whileTap={{ scale: 0.8, rotate: 180 }}
+                  onClick={handleToggleFavorite}
+                  className={`p-2 rounded-full transition-colors ${
+                    isFavorite ? 'bg-yellow-400/20 hover:bg-yellow-400/30' : 'bg-white/10 hover:bg-white/20'
+                  }`}
+                  title={isFavorite ? 'Quitar de favoritos' : 'Agregar a favoritos'}
                 >
-                  <Star className="w-5 h-5 text-yellow-400" />
+                  <Star className={`w-5 h-5 transition-colors duration-300 ${
+                    isFavorite ? 'text-yellow-400 fill-yellow-400' : 'text-white/70 hover:text-yellow-400'
+                  }`} />
                 </motion.button>
               )}
             </div>
@@ -130,15 +140,18 @@ export default function Home() {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="text-center py-20"
+                  className="space-y-6 pb-20"
                 >
-                  <CloudSun className="w-20 h-20 mx-auto mb-4 text-white/80" />
-                  <h2 className="text-xl font-semibold text-white mb-2">
-                    Bienvenido a Climix
-                  </h2>
-                  <p className="text-white/60 mb-4">
-                    Busca una ciudad o usa tu ubicacion para comenzar
-                  </p>
+                  <div className="text-center py-10">
+                    <CloudSun className="w-20 h-20 mx-auto mb-4 text-white/80" />
+                    <h2 className="text-xl font-semibold text-white mb-2">
+                      Bienvenido a Climix
+                    </h2>
+                    <p className="text-white/60">
+                      Busca una ciudad o usa tu ubicacion para comenzar
+                    </p>
+                  </div>
+                  <Favorites />
                 </motion.div>
               )}
             </AnimatePresence>

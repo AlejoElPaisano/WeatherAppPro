@@ -183,7 +183,7 @@ const normalizeWeatherData = (
     // Agregar la hora actual
     interpolatedHourly.push({
       dt: currentItem.dt,
-      hour: currentDate.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }),
+      hour: currentDate.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false }),
       temp: Math.round(currentItem.main.temp),
       humidity: currentItem.main.humidity,
       condition: itemCondition.main,
@@ -207,7 +207,7 @@ const normalizeWeatherData = (
 
         interpolatedHourly.push({
           dt: Math.floor(interpolatedDate.getTime() / 1000),
-          hour: interpolatedDate.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }),
+          hour: interpolatedDate.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false }),
           temp: interpolatedTemp,
           humidity: interpolatedHumidity,
           condition: itemCondition.main,
@@ -227,7 +227,7 @@ const normalizeWeatherData = (
     const lastCondition = lastItem.weather[0] ?? currentCondition;
     interpolatedHourly.push({
       dt: lastItem.dt,
-      hour: lastDate.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }),
+      hour: lastDate.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false }),
       temp: Math.round(lastItem.main.temp),
       humidity: lastItem.main.humidity,
       condition: lastCondition.main,
@@ -246,7 +246,7 @@ const normalizeWeatherData = (
     const srDate = new Date(daySunrise * 1000);
     sunEvents.push({
       dt: daySunrise,
-      hour: srDate.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }),
+      hour: srDate.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false }),
       temp: 0,
       humidity: 0,
       condition: 'Clear',
@@ -258,7 +258,7 @@ const normalizeWeatherData = (
     const ssDate = new Date(daySunset * 1000);
     sunEvents.push({
       dt: daySunset,
-      hour: ssDate.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }),
+      hour: ssDate.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false }),
       temp: 0,
       humidity: 0,
       condition: 'Clear',
@@ -350,10 +350,30 @@ const fetchWeatherByCoords = async (
     )
   ]);
 
+  let finalCity = city;
+  let finalCountry = country;
+  let finalState = state;
+
+  if (!finalCity) {
+    try {
+      const reverseGeo = await fetchJson<LocationSuggestion[]>(
+        `https://api.openweathermap.org/geo/1.0/reverse?lat=${lat}&lon=${lon}&limit=1&appid=${apiKey}`,
+        'Error en reverse geocoding'
+      );
+      if (reverseGeo && reverseGeo.length > 0) {
+        finalCity = reverseGeo[0].name;
+        finalCountry = reverseGeo[0].country;
+        finalState = reverseGeo[0].state;
+      }
+    } catch (e) {
+      console.warn('No se pudo obtener el nombre real de la ubicacion', e);
+    }
+  }
+
   const location: LocationData = {
-    city: city || weatherData.name,
-    state,
-    country: country || weatherData.sys.country,
+    city: finalCity || weatherData.name,
+    state: finalState,
+    country: finalCountry || weatherData.sys.country,
     lat,
     lon
   };
