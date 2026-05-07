@@ -159,7 +159,8 @@ const normalizeWeatherData = (
       temp: Math.round(item.main.temp),
       humidity: item.main.humidity,
       condition: itemCondition.main,
-      icon: itemCondition.icon
+      icon: itemCondition.icon,
+      rainProbability: item.pop ? Math.round(item.pop * 100) : 0
     };
   });
 

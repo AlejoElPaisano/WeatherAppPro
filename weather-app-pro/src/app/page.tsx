@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { CloudSun, Star } from 'lucide-react';
 import WeatherSearch from '@/components/WeatherSearch';
 import TemperatureCard from '@/components/TemperatureCard';
+import WeatherDetails from '@/components/WeatherDetails';
 import DailyForecast from '@/components/DailyForecast';
 import HourlyForecast from '@/components/HourlyForecast';
 import WeatherBackground from '@/components/WeatherBackground';
@@ -96,6 +97,7 @@ export default function Home() {
                   <TemperatureCard />
                   <HourlyForecast />
                   <DailyForecast />
+                  <WeatherDetails />
                   <Favorites />
                 </motion.div>
               ) : (

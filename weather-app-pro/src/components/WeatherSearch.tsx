@@ -17,12 +17,17 @@ export default function WeatherSearch() {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [isFetchingSuggestions, setIsFetchingSuggestions] = useState(false);
+  const [suggestionsLocked, setSuggestionsLocked] = useState(false);
   const { searchWeather, searchWeatherByCoords, searchLocationSuggestions } = useWeatherSearch();
   const { searchByLocation } = useGeolocation();
   const { setLoading, setError } = useWeatherStore();
 
   useEffect(() => {
     const normalizedQuery = query.trim();
+
+    if (suggestionsLocked) {
+      return;
+    }
 
     if (normalizedQuery.length < 2) {
       return;
@@ -55,9 +60,10 @@ export default function WeatherSearch() {
       isActive = false;
       window.clearTimeout(timeout);
     };
-  }, [query, searchLocationSuggestions]);
+  }, [query, searchLocationSuggestions, suggestionsLocked]);
 
   const handleQueryChange = (value: string) => {
+    setSuggestionsLocked(false);
     setQuery(value);
 
     if (value.trim().length < 2) {
@@ -68,9 +74,11 @@ export default function WeatherSearch() {
   };
 
   const selectSuggestion = async (suggestion: LocationSuggestion) => {
+    setSuggestionsLocked(true);
     setQuery(formatLocationSuggestion(suggestion));
     setShowSuggestions(false);
     setSuggestions([]);
+    setIsFetchingSuggestions(false);
     setIsSearching(true);
     setLoading(true);
     setError(null);
@@ -108,6 +116,7 @@ export default function WeatherSearch() {
       setIsSearching(false);
       setLoading(false);
       setShowSuggestions(false);
+      setSuggestionsLocked(true);
     }
   };
 
@@ -116,6 +125,7 @@ export default function WeatherSearch() {
     setLoading(true);
     setError(null);
     setShowSuggestions(false);
+    setSuggestionsLocked(true);
 
     try {
       await searchByLocation();
@@ -141,7 +151,11 @@ export default function WeatherSearch() {
             type="text"
             value={query}
             onChange={(event) => handleQueryChange(event.target.value)}
-            onFocus={() => setShowSuggestions(suggestions.length > 0)}
+            onFocus={() => {
+              if (!suggestionsLocked) {
+                setShowSuggestions(suggestions.length > 0);
+              }
+            }}
             onBlur={() => window.setTimeout(() => setShowSuggestions(false), 120)}
             placeholder="Buscar ciudad..."
             className="w-full pl-10 pr-10 py-3 rounded-2xl bg-white/20 backdrop-blur-md border border-white/10 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/30 transition-all duration-300"
@@ -164,8 +178,10 @@ export default function WeatherSearch() {
                   <button
                     key={`${suggestion.name}-${suggestion.state}-${suggestion.country}-${suggestion.lat}-${suggestion.lon}`}
                     type="button"
-                    onMouseDown={(event) => event.preventDefault()}
-                    onClick={() => selectSuggestion(suggestion)}
+                    onMouseDown={(event) => {
+                      event.preventDefault();
+                      void selectSuggestion(suggestion);
+                    }}
                     className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm text-white/85 transition-colors hover:bg-white/10 focus:bg-white/10 focus:outline-none"
                   >
                     <Navigation className="h-4 w-4 flex-shrink-0 text-cyan-200" />

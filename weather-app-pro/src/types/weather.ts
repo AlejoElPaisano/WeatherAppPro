@@ -39,6 +39,7 @@ export interface HourlyForecast {
   humidity: number;
   condition: string;
   icon: string;
+  rainProbability: number;
 }
 
 export interface LocationData {
