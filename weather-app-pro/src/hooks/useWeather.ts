@@ -134,13 +134,15 @@ const normalizeWeatherData = (
 
   forecastData.list.forEach((item) => {
     const date = new Date(item.dt * 1000);
-    const dayKey = date.toISOString().split('T')[0];
+    // Use local timezone for grouping instead of UTC to avoid offset issues
+    const dayKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
     const itemCondition = item.weather[0] ?? currentCondition;
 
     if (!dailyMap.has(dayKey)) {
       dailyMap.set(dayKey, {
         dt: item.dt,
-        day: date.toLocaleDateString(locale, { weekday: 'short' }),
+        day: date.toLocaleDateString(locale, { weekday: 'short' }).replace(/\./g, ''),
+        fullDayName: date.toLocaleDateString(locale, { weekday: 'long' }),
         min: Math.round(item.main.temp_min),
         max: Math.round(item.main.temp_max),
         condition: itemCondition.main,

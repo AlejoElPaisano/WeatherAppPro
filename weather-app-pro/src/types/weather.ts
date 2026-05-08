@@ -25,6 +25,7 @@ export interface ForecastData {
 export interface DailyForecast {
   dt: number;
   day: string;
+  fullDayName?: string;
   min: number;
   max: number;
   condition: string;

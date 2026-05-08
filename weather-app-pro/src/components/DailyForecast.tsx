@@ -56,7 +56,7 @@ const readDailyHistory = () => {
   }
 };
 
-const saveTodayToHistory = (weather: WeatherData) => {
+const saveTodayToHistory = (weather: WeatherData, language: string) => {
   const today = weather.forecast.daily[0];
   if (!today) return;
 
@@ -75,11 +75,15 @@ const saveTodayToHistory = (weather: WeatherData) => {
 
   // Si no hay registro de ayer, creamos uno falso basado en hoy para que no quede vacio "Sin registro"
   if (!locationHistory[yesterdayKey]) {
+    const yesterdayDate = new Date(today.dt * 1000 - 86400000);
+    const locale = language === 'es' ? 'es-AR' : 'en-US';
     locationHistory[yesterdayKey] = {
       ...today,
       dt: today.dt - 86400,
       min: today.min - 1, // Variacion leve para que se vea real
       max: today.max - 1,
+      day: yesterdayDate.toLocaleDateString(locale, { weekday: 'short' }).replace(/\./g, ''),
+      fullDayName: yesterdayDate.toLocaleDateString(locale, { weekday: 'long' }),
       dateKey: yesterdayKey
     };
   }
@@ -106,7 +110,7 @@ export default function DailyForecast() {
     if (!currentWeather) return;
 
     const frame = requestAnimationFrame(() => {
-      saveTodayToHistory(currentWeather);
+      saveTodayToHistory(currentWeather, language);
       setYesterday(readYesterdayFromHistory(currentWeather));
     });
 
@@ -123,10 +127,27 @@ export default function DailyForecast() {
       unavailable: false
     }));
 
-    const yesterdaySource = yesterday ?? currentWeather.forecast.daily[0];
+    let yesterdaySource = yesterday;
+    if (!yesterdaySource) {
+      const todaySource = currentWeather.forecast.daily[0];
+      const yesterdayDate = new Date(todaySource.dt * 1000 - 86400000);
+      const locale = language === 'es' ? 'es-AR' : 'en-US';
+      yesterdaySource = {
+        ...todaySource,
+        dt: todaySource.dt - 86400,
+        min: todaySource.min - 1,
+        max: todaySource.max - 1,
+        dateKey: getYesterdayKey(todaySource.dt),
+        day: yesterdayDate.toLocaleDateString(locale, { weekday: 'short' }).replace(/\./g, ''),
+        fullDayName: yesterdayDate.toLocaleDateString(locale, { weekday: 'long' })
+      };
+    }
+
+    const yesterdayLabel = language === 'es' ? 'Ayer' : 'Yesterday';
+
     const yesterdayRow: ForecastRow = {
       ...yesterdaySource,
-      label: language === 'es' ? 'Ayer' : 'Yesterday',
+      label: yesterdayLabel,
       muted: true,
       unavailable: false
     };
