@@ -133,6 +133,7 @@ export default function HourlyForecast() {
     time: hour.hour,
     temp: hour.temp,
     feels_like: hour.feels_like,
+    displayTemp: showFeelsLike && hour.feels_like !== undefined ? hour.feels_like : hour.temp,
     humidity: hour.humidity,
     rainFull: hour.rainProbability > 0 ? 100 : 0,
     rainProbability: hour.rainProbability,
@@ -274,7 +275,7 @@ export default function HourlyForecast() {
                         </span>
                       ) : (
                         <span className="text-2xl font-semibold leading-none text-white drop-shadow">
-                          {hour.temp}{degree}
+                          {showFeelsLike && hour.feels_like !== undefined ? hour.feels_like : hour.temp}{degree}
                         </span>
                       )}
                     </div>
@@ -294,7 +295,7 @@ export default function HourlyForecast() {
                           <stop 
                             key={i} 
                             offset={`${(i / (chartData.length - 1)) * 100}%`} 
-                            stopColor={getTempColor(h.temp)} 
+                            stopColor={getTempColor(h.displayTemp)} 
                             stopOpacity={0.8} 
                           />
                         ))}
@@ -327,7 +328,7 @@ export default function HourlyForecast() {
 
                     <Area
                       type="monotone"
-                      dataKey="temp"
+                      dataKey="displayTemp"
                       stroke="#ffffff"
                       strokeWidth={3}
                       fillOpacity={1}
@@ -337,19 +338,6 @@ export default function HourlyForecast() {
                       isAnimationActive
                       animationDuration={1200}
                     />
-
-                    {showFeelsLike && (
-                      <Line
-                        type="monotone"
-                        dataKey="feels_like"
-                        stroke="#d8b4fe"
-                        strokeWidth={2}
-                        strokeDasharray="5 5"
-                        dot={false}
-                        activeDot={false}
-                        isAnimationActive
-                      />
-                    )}
                   </ComposedChart>
                 </ResponsiveContainer>
               </div>
