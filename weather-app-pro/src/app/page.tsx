@@ -74,7 +74,13 @@ export default function Home() {
                     </motion.button>
                   )}
                 </AnimatePresence>
-                <h1 className="text-2xl font-extrabold bg-gradient-to-r from-white to-white/70 bg-clip-text text-transparent tracking-tight">Climix</h1>
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center justify-center bg-white/10 p-1.5 rounded-xl border border-white/20 backdrop-blur-md shadow-lg">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src="/logo.png" alt="Climix Logo" className="w-8 h-8 object-contain rounded-lg" />
+                  </div>
+                  <h1 className="text-2xl font-extrabold bg-gradient-to-r from-white to-white/70 bg-clip-text text-transparent tracking-tight">Climix</h1>
+                </div>
               </div>
               <div className="flex items-center gap-3">
                 <button
