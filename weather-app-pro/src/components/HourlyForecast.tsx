@@ -92,7 +92,7 @@ const CustomRainShape = (props: any) => {
 };
 
 export default function HourlyForecast() {
-  const { currentWeather } = useWeatherStore();
+  const { currentWeather, language } = useWeatherStore();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(true);
@@ -119,9 +119,15 @@ export default function HourlyForecast() {
   const { hourly, daily } = forecast;
   const today = daily[0];
 
-  const summary = today
-    ? `${capitalize(current.description)}. Maximas entre ${today.max - 1} y ${today.max + 1} C y minimas entre ${Math.max(today.min - 1, -20)} y ${today.min + 1} C.`
+  const summaryEs = today
+    ? `${capitalize(current.description)}. Máximas entre ${today.max - 1} y ${today.max + 1} C y mínimas entre ${Math.max(today.min - 1, -20)} y ${today.min + 1} C.`
     : capitalize(current.description);
+    
+  const summaryEn = today
+    ? `${capitalize(current.description)}. Highs between ${today.max - 1} and ${today.max + 1} C, lows between ${Math.max(today.min - 1, -20)} and ${today.min + 1} C.`
+    : capitalize(current.description);
+
+  const summary = language === 'es' ? summaryEs : summaryEn;
 
   const chartData = hourly.map((hour) => ({
     time: hour.hour,
@@ -182,7 +188,9 @@ export default function HourlyForecast() {
         }
       `}</style>
       <div className="flex items-center justify-between mb-3 px-2">
-        <h3 className="text-lg font-semibold text-white">Pronóstico por horas</h3>
+        <h3 className="text-lg font-semibold text-white">
+          {language === 'es' ? 'Pronóstico por horas' : 'Hourly Forecast'}
+        </h3>
         <label className="flex items-center gap-2 cursor-pointer bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-full transition-colors border border-white/5">
           <div className="relative">
             <input 
@@ -194,7 +202,9 @@ export default function HourlyForecast() {
             <div className={`block w-10 h-5 rounded-full transition-colors ${showFeelsLike ? 'bg-purple-500/80 shadow-[0_0_10px_rgba(168,85,247,0.4)]' : 'bg-black/30'}`}></div>
             <div className={`absolute left-1 top-1 bg-white w-3 h-3 rounded-full transition-transform ${showFeelsLike ? 'transform translate-x-5' : ''}`}></div>
           </div>
-          <span className={`text-sm font-medium transition-colors ${showFeelsLike ? 'text-purple-200' : 'text-white/70'}`}>Sensación</span>
+          <span className={`text-sm font-medium transition-colors ${showFeelsLike ? 'text-purple-200' : 'text-white/70'}`}>
+            {language === 'es' ? 'Sensación' : 'Feels Like'}
+          </span>
         </label>
       </div>
 
@@ -208,7 +218,7 @@ export default function HourlyForecast() {
           <button
             onClick={() => scroll('left')}
             className={`hidden lg:flex absolute left-0 top-[45%] -translate-y-1/2 z-20 items-center justify-center w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-md text-white transition-opacity duration-300 ${showLeftArrow ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
-            title="Desplazar a la izquierda"
+            title={language === 'es' ? 'Desplazar a la izquierda' : 'Scroll left'}
           >
             <ChevronLeft className="w-5 h-5 pr-0.5" />
           </button>
@@ -216,7 +226,7 @@ export default function HourlyForecast() {
           <button
             onClick={() => scroll('right')}
             className={`hidden lg:flex absolute right-0 top-[45%] -translate-y-1/2 z-20 items-center justify-center w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-md text-white transition-opacity duration-300 ${showRightArrow ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
-            title="Desplazar a la derecha"
+            title={language === 'es' ? 'Desplazar a la derecha' : 'Scroll right'}
           >
             <ChevronRight className="w-5 h-5 pl-0.5" />
           </button>
@@ -251,9 +261,13 @@ export default function HourlyForecast() {
                     </div>
                     <div className="flex h-8 items-center justify-center">
                       {hour.isSunrise ? (
-                        <span className="text-sm font-medium text-white drop-shadow truncate">Amanecer</span>
+                        <span className="text-sm font-medium text-white drop-shadow truncate">
+                          {language === 'es' ? 'Amanecer' : 'Sunrise'}
+                        </span>
                       ) : hour.isSunset ? (
-                        <span className="text-sm font-medium text-white drop-shadow truncate">Atardecer</span>
+                        <span className="text-sm font-medium text-white drop-shadow truncate">
+                          {language === 'es' ? 'Atardecer' : 'Sunset'}
+                        </span>
                       ) : (
                         <span className="text-2xl font-semibold leading-none text-white drop-shadow">
                           {hour.temp}{degree}

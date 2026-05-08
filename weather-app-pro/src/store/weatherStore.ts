@@ -8,6 +8,7 @@ interface WeatherStore {
   loading: boolean;
   error: string | null;
   weatherType: WeatherType;
+  language: 'en' | 'es';
   favorites: string[];
   unit: 'C' | 'F';
   searchResetKey: number;
@@ -18,6 +19,7 @@ interface WeatherStore {
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
   setWeatherType: (type: WeatherType) => void;
+  setLanguage: (lang: 'en' | 'es') => void;
   addFavorite: (city: string) => void;
   removeFavorite: (city: string) => void;
   toggleUnit: () => void;
@@ -31,6 +33,7 @@ export const useWeatherStore = create<WeatherStore>((set, get) => ({
   loading: false,
   error: null,
   weatherType: 'clear',
+  language: 'en',
   favorites: [],
   unit: 'C',
   searchResetKey: 0,
@@ -40,6 +43,7 @@ export const useWeatherStore = create<WeatherStore>((set, get) => ({
   setLoading: (loading) => set({ loading }),
   setError: (error) => set({ error }),
   setWeatherType: (type) => set({ weatherType: type }),
+  setLanguage: (lang) => set({ language: lang }),
   
   addFavorite: (city) => {
     const current = get().favorites;

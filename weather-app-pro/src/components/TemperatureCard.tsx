@@ -39,7 +39,7 @@ const weatherAnimations: Record<WeatherType, string> = {
 };
 
 export default function TemperatureCard() {
-  const { currentWeather, weatherType } = useWeatherStore();
+  const { currentWeather, weatherType, language } = useWeatherStore();
 
   if (!currentWeather) return null;
 
@@ -108,7 +108,7 @@ export default function TemperatureCard() {
           <div className="flex items-center gap-2 px-4 py-2 bg-white/10 border border-white/10 rounded-2xl shadow-lg backdrop-blur-md">
             <Thermometer className="w-4 h-4 text-amber-300" />
             <span className="text-sm text-white font-medium">
-              Sensación <span className="font-bold">{current.feels_like}{degree}</span>
+              {language === 'es' ? 'Sensación' : 'Feels Like'} <span className="font-bold">{current.feels_like}{degree}</span>
             </span>
           </div>
           
