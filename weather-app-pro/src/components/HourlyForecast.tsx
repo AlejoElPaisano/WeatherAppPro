@@ -145,6 +145,10 @@ export default function HourlyForecast() {
   const minTemp = Math.min(...temps, 0);
   const maxTemp = Math.max(...temps, 1);
 
+  const allChartTemps = chartData.flatMap(h => (h.isSunrise || h.isSunset) ? [] : [h.temp, h.feels_like]);
+  const chartYMin = Math.min(...allChartTemps);
+  const chartYMax = Math.max(...allChartTemps);
+
   const getTempColor = (temp: number) => {
     const ratio = (temp - minTemp) / (maxTemp - minTemp || 1);
     const r = Math.round(110 + (245 - 110) * ratio);
@@ -305,7 +309,7 @@ export default function HourlyForecast() {
                     </defs>
 
                     <XAxis dataKey="time" hide />
-                    <YAxis hide domain={['dataMin - 3', 'dataMax + 3']} />
+                    <YAxis hide domain={[chartYMin - 3, chartYMax + 3]} />
                     <YAxis yAxisId="rain" hide domain={[0, 100]} />
                     
                     <Tooltip
