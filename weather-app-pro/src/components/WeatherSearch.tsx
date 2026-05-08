@@ -20,7 +20,7 @@ export default function WeatherSearch() {
   const [suggestionsLocked, setSuggestionsLocked] = useState(false);
   const { searchWeather, searchWeatherByCoords, searchLocationSuggestions } = useWeatherSearch();
   const { searchByLocation } = useGeolocation();
-  const { setLoading, setError } = useWeatherStore();
+  const { setLoading, setError, language } = useWeatherStore();
 
   useEffect(() => {
     const normalizedQuery = query.trim();
@@ -157,7 +157,7 @@ export default function WeatherSearch() {
               }
             }}
             onBlur={() => window.setTimeout(() => setShowSuggestions(false), 120)}
-            placeholder="Buscar ciudad..."
+            placeholder={language === 'es' ? 'Buscar ciudad...' : 'Search for a city...'}
             className="w-full pl-10 pr-10 py-3 rounded-2xl bg-white/20 backdrop-blur-md border border-white/10 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/30 transition-all duration-300"
             disabled={isSearching}
             autoComplete="off"
@@ -210,7 +210,7 @@ export default function WeatherSearch() {
                 whileTap={{ scale: 0.95 }}
                 type="submit"
                 className="flex items-center justify-center w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md text-white hover:bg-white/30 transition-colors duration-200"
-                title="Buscar ciudad"
+                title={language === 'es' ? 'Buscar ciudad' : 'Search city'}
               >
                 <Search className="w-5 h-5" />
               </motion.button>

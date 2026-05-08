@@ -36,6 +36,7 @@ export interface HourlyForecast {
   dt: number;
   hour: string;
   temp: number;
+  feels_like: number;
   humidity: number;
   condition: string;
   icon: string;

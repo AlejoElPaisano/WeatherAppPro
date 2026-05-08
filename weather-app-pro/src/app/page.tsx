@@ -12,11 +12,12 @@ import WeatherBackground from '@/components/WeatherBackground';
 import Favorites from '@/components/Favorites';
 import SkeletonLoader from '@/components/SkeletonLoader';
 import { useWeatherStore } from '@/store/weatherStore';
-import { useGeolocation } from '@/hooks/useWeather';
+import { useGeolocation, useWeatherSearch } from '@/hooks/useWeather';
 
 export default function Home() {
-  const { currentWeather, loading, error, addFavorite, removeFavorite, clearWeather, searchResetKey, favorites } = useWeatherStore();
+  const { currentWeather, loading, error, addFavorite, removeFavorite, clearWeather, searchResetKey, favorites, language, setLanguage } = useWeatherStore();
   const { searchByLocation } = useGeolocation();
+  const { searchWeatherByCoords } = useWeatherSearch();
 
   useEffect(() => {
     const loadInitialLocation = async () => {
@@ -73,23 +74,45 @@ export default function Home() {
                     </motion.button>
                   )}
                 </AnimatePresence>
-                <h1 className="text-xl font-bold text-white">Climix</h1>
+                <h1 className="text-2xl font-extrabold bg-gradient-to-r from-white to-white/70 bg-clip-text text-transparent tracking-tight">Climix</h1>
               </div>
-              {currentWeather && (
-                <motion.button
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.8, rotate: 180 }}
-                  onClick={handleToggleFavorite}
-                  className={`p-2 rounded-full transition-colors ${
-                    isFavorite ? 'bg-yellow-400/20 hover:bg-yellow-400/30' : 'bg-white/10 hover:bg-white/20'
-                  }`}
-                  title={isFavorite ? 'Quitar de favoritos' : 'Agregar a favoritos'}
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => {
+                    const newLang = language === 'es' ? 'en' : 'es';
+                    setLanguage(newLang);
+                    if (currentWeather) {
+                      searchWeatherByCoords(
+                        currentWeather.location.lat, 
+                        currentWeather.location.lon, 
+                        currentWeather.location.city, 
+                        currentWeather.location.country, 
+                        currentWeather.location.state, 
+                        newLang
+                      );
+                    }
+                  }}
+                  className="px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 transition-colors text-xs font-bold text-white uppercase tracking-wider border border-white/20"
+                  title={language === 'es' ? 'Switch to English' : 'Cambiar a Español'}
                 >
-                  <Star className={`w-5 h-5 transition-colors duration-300 ${
-                    isFavorite ? 'text-yellow-400 fill-yellow-400' : 'text-white/70 hover:text-yellow-400'
-                  }`} />
-                </motion.button>
-              )}
+                  {language === 'en' ? 'EN' : 'ES'}
+                </button>
+                {currentWeather && (
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.8, rotate: 180 }}
+                    onClick={handleToggleFavorite}
+                    className={`p-2 rounded-full transition-colors ${
+                      isFavorite ? 'bg-yellow-400/20 hover:bg-yellow-400/30' : 'bg-white/10 hover:bg-white/20'
+                    }`}
+                    title={isFavorite ? 'Quitar de favoritos' : 'Agregar a favoritos'}
+                  >
+                    <Star className={`w-5 h-5 transition-colors duration-300 ${
+                      isFavorite ? 'text-yellow-400 fill-yellow-400' : 'text-white/70 hover:text-yellow-400'
+                    }`} />
+                  </motion.button>
+                )}
+              </div>
             </div>
             <div className="lg:flex-1">
               <WeatherSearch key={searchResetKey} />
@@ -151,10 +174,10 @@ export default function Home() {
                   <div className="text-center py-10">
                     <CloudSun className="w-20 h-20 mx-auto mb-4 text-white/80" />
                     <h2 className="text-xl font-semibold text-white mb-2">
-                      Bienvenido a Climix
+                      {language === 'es' ? 'Bienvenido a Climix' : 'Welcome to Climix'}
                     </h2>
                     <p className="text-white/60">
-                      Busca una ciudad o usa tu ubicacion para comenzar
+                      {language === 'es' ? 'Busca una ciudad o usa tu ubicación para comenzar' : 'Search for a city or use your location to start'}
                     </p>
                   </div>
                   <Favorites />

@@ -110,8 +110,10 @@ const fetchJson = async <T,>(url: string, errorMessage: string): Promise<T> => {
 const normalizeWeatherData = (
   weatherData: OpenWeatherCurrentResponse,
   forecastData: OpenWeatherForecastResponse,
-  location: LocationData
+  location: LocationData,
+  lang: string = 'en'
 ): WeatherData => {
+  const locale = lang === 'es' ? 'es-AR' : 'en-US';
   const currentCondition = weatherData.weather[0] ?? {
     main: 'Clear',
     description: 'despejado',
@@ -145,7 +147,7 @@ const normalizeWeatherData = (
     if (!dailyMap.has(dayKey)) {
       dailyMap.set(dayKey, {
         dt: item.dt,
-        day: date.toLocaleDateString('es-AR', { weekday: 'short' }),
+        day: date.toLocaleDateString(locale, { weekday: 'short' }),
         min: Math.round(item.main.temp_min),
         max: Math.round(item.main.temp_max),
         condition: itemCondition.main,
@@ -200,8 +202,9 @@ const normalizeWeatherData = (
     // Agregar la hora actual
     interpolatedHourly.push({
       dt: currentItem.dt,
-      hour: currentDate.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false }),
+      hour: currentDate.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit', hour12: false }),
       temp: Math.round(currentItem.main.temp),
+      feels_like: Math.round(currentItem.main.feels_like),
       humidity: currentItem.main.humidity,
       condition: itemCondition.main,
       icon: itemCondition.icon,
@@ -214,6 +217,7 @@ const normalizeWeatherData = (
     if (hourDiff > 1 && hourDiff <= 4) { // Only interpolate up to 4 hours gaps (usually it's 3)
       for (let h = 1; h < hourDiff; h++) {
         const interpolatedTemp = Math.round(currentItem.main.temp + ((nextItem.main.temp - currentItem.main.temp) * h / hourDiff));
+        const interpolatedFeelsLike = Math.round(currentItem.main.feels_like + ((nextItem.main.feels_like - currentItem.main.feels_like) * h / hourDiff));
         const interpolatedHumidity = Math.round(currentItem.main.humidity + ((nextItem.main.humidity - currentItem.main.humidity) * h / hourDiff));
         const interpolatedPop = currentItem.pop !== undefined && nextItem.pop !== undefined
           ? Math.round((currentItem.pop + (nextItem.pop - currentItem.pop) * h / hourDiff) * 100)
@@ -224,8 +228,9 @@ const normalizeWeatherData = (
 
         interpolatedHourly.push({
           dt: Math.floor(interpolatedDate.getTime() / 1000),
-          hour: interpolatedDate.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false }),
+          hour: interpolatedDate.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit', hour12: false }),
           temp: interpolatedTemp,
+          feels_like: interpolatedFeelsLike,
           humidity: interpolatedHumidity,
           condition: itemCondition.main,
           icon: itemCondition.icon,
@@ -244,8 +249,9 @@ const normalizeWeatherData = (
     const lastCondition = lastItem.weather[0] ?? currentCondition;
     interpolatedHourly.push({
       dt: lastItem.dt,
-      hour: lastDate.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false }),
+      hour: lastDate.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit', hour12: false }),
       temp: Math.round(lastItem.main.temp),
+      feels_like: Math.round(lastItem.main.feels_like),
       humidity: lastItem.main.humidity,
       condition: lastCondition.main,
       icon: lastCondition.icon,
@@ -263,8 +269,9 @@ const normalizeWeatherData = (
     const srDate = new Date(daySunrise * 1000);
     sunEvents.push({
       dt: daySunrise,
-      hour: srDate.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false }),
+      hour: srDate.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit', hour12: false }),
       temp: 0,
+      feels_like: 0,
       humidity: 0,
       condition: 'Clear',
       icon: '01d',
@@ -275,8 +282,9 @@ const normalizeWeatherData = (
     const ssDate = new Date(daySunset * 1000);
     sunEvents.push({
       dt: daySunset,
-      hour: ssDate.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false }),
+      hour: ssDate.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit', hour12: false }),
       temp: 0,
+      feels_like: 0,
       humidity: 0,
       condition: 'Clear',
       icon: '01n',
@@ -309,14 +317,17 @@ const normalizeWeatherData = (
       if (prev && next) {
         const ratio = (combined[i].dt - prev.dt) / (next.dt - prev.dt);
         combined[i].temp = Math.round(prev.temp + (next.temp - prev.temp) * ratio);
+        combined[i].feels_like = Math.round(prev.feels_like + (next.feels_like - prev.feels_like) * ratio);
         combined[i].humidity = Math.round(prev.humidity + (next.humidity - prev.humidity) * ratio);
         combined[i].rainProbability = Math.round(prev.rainProbability + (next.rainProbability - prev.rainProbability) * ratio);
       } else if (prev) {
         combined[i].temp = prev.temp;
+        combined[i].feels_like = prev.feels_like;
         combined[i].humidity = prev.humidity;
         combined[i].rainProbability = prev.rainProbability;
       } else if (next) {
         combined[i].temp = next.temp;
+        combined[i].feels_like = next.feels_like;
         combined[i].humidity = next.humidity;
         combined[i].rainProbability = next.rainProbability;
       }
@@ -351,10 +362,11 @@ const fetchWeatherByCoords = async (
   lon: number,
   city: string,
   country: string,
-  state?: string
+  state?: string,
+  lang: string = 'en'
 ) => {
   const apiKey = getApiKey();
-  const params = `lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric&lang=es`;
+  const params = `lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric&lang=${lang}`;
 
   const [weatherData, forecastData] = await Promise.all([
     fetchJson<OpenWeatherCurrentResponse>(
@@ -396,7 +408,7 @@ const fetchWeatherByCoords = async (
   };
 
   return {
-    data: normalizeWeatherData(weatherData, forecastData, location),
+    data: normalizeWeatherData(weatherData, forecastData, location, lang),
     weatherType: getWeatherType(
       weatherData.weather[0]?.icon ?? '01d',
       weatherData.dt,
@@ -420,14 +432,17 @@ export const useWeatherSearch = () => {
     lon: number,
     city = '',
     country = '',
-    state?: string
+    state?: string,
+    lang?: string
   ) => {
     setLocalLoading(true);
     setLoading(true);
     setError(null);
 
     try {
-      const result = await fetchWeatherByCoords(lat, lon, city, country, state);
+      const { language } = useWeatherStore.getState();
+      const currentLang = lang || language;
+      const result = await fetchWeatherByCoords(lat, lon, city, country, state, currentLang);
       applyWeatherResult(result);
 
       return result.data;
@@ -454,12 +469,14 @@ export const useWeatherSearch = () => {
       }
 
       const location = geoData[0];
+      const { language } = useWeatherStore.getState();
       const result = await fetchWeatherByCoords(
         location.lat,
         location.lon,
         location.name,
         location.country,
-        location.state
+        location.state,
+        language
       );
       applyWeatherResult(result);
 

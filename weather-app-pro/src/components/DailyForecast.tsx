@@ -99,7 +99,7 @@ const readYesterdayFromHistory = (weather: WeatherData) => {
 };
 
 export default function DailyForecast() {
-  const { currentWeather } = useWeatherStore();
+  const { currentWeather, language } = useWeatherStore();
   const [yesterday, setYesterday] = useState<StoredDailyForecast | null>(null);
 
   useEffect(() => {
@@ -118,7 +118,7 @@ export default function DailyForecast() {
 
     const dailyRows: ForecastRow[] = currentWeather.forecast.daily.slice(0, 7).map((day, index) => ({
       ...day,
-      label: index === 0 ? 'Hoy' : day.day,
+      label: index === 0 ? (language === 'es' ? 'Hoy' : 'Today') : day.day,
       muted: false,
       unavailable: false
     }));
@@ -126,13 +126,13 @@ export default function DailyForecast() {
     const yesterdaySource = yesterday ?? currentWeather.forecast.daily[0];
     const yesterdayRow: ForecastRow = {
       ...yesterdaySource,
-      label: 'Ayer',
+      label: language === 'es' ? 'Ayer' : 'Yesterday',
       muted: true,
       unavailable: false
     };
 
     return [yesterdayRow, ...dailyRows];
-  }, [currentWeather, yesterday]);
+  }, [currentWeather, yesterday, language]);
 
   if (!currentWeather) return null;
 
@@ -143,7 +143,9 @@ export default function DailyForecast() {
       transition={{ duration: 0.5, delay: 0.2 }}
       className="w-full"
     >
-      <h3 className="text-lg font-semibold text-white mb-3 px-2">Proximos dias</h3>
+      <h3 className="text-lg font-semibold text-white mb-3 px-2">
+        {language === 'es' ? 'Próximos días' : 'Next 7 Days'}
+      </h3>
       <div className="rounded-[2rem] border border-white/10 bg-white/10 p-5 shadow-2xl shadow-black/15 backdrop-blur-md">
         <div className="space-y-5">
           {rows.map((day, index) => (
@@ -172,7 +174,7 @@ export default function DailyForecast() {
                     <Moon className="w-7 h-7 text-slate-100/90 drop-shadow" />
                   </>
                 )}
-                {day.unavailable && <span className="text-sm text-white/55">Sin registro</span>}
+                {day.unavailable && <span className="text-sm text-white/55">{language === 'es' ? 'Sin registro' : 'No data'}</span>}
               </div>
 
               <div className="flex justify-end gap-3 text-2xl font-semibold text-white">

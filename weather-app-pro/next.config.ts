@@ -14,6 +14,11 @@ const nextConfig: NextConfig = {
         pathname: "/**"
       }
     ]
+  },
+  devIndicators: {
+    appIsrStatus: false,
+    buildActivity: false,
+    buildActivityPosition: 'bottom-right',
   }
 };
 
