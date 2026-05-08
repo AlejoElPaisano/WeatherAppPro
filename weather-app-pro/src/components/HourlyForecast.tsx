@@ -49,6 +49,48 @@ const CustomTooltip = ({ active, payload }: any) => {
   return null;
 };
 
+const CustomRainShape = (props: any) => {
+  const { x, y, width, height, payload } = props;
+  const prob = payload.rainProbability;
+  
+  if (!prob || prob === 0) return null;
+
+  // Pseudo-random deterministic values based on hour to avoid jitter
+  const seed = payload.time ? payload.time.charCodeAt(0) + payload.time.charCodeAt(1) : 1;
+  const random = (i: number) => {
+    const val = Math.sin(seed * 100 + i * 10) * 10000;
+    return val - Math.floor(val);
+  };
+
+  const dropCount = Math.max(2, Math.floor((prob / 100) * 15));
+  const drops = Array.from({ length: dropCount });
+
+  return (
+    <foreignObject x={x} y={y} width={width} height={height} className="pointer-events-none">
+      <div className="relative w-full h-full overflow-hidden">
+        {drops.map((_, i) => {
+          const left = `${5 + random(i) * 90}%`;
+          const delay = `${random(i + 10) * 2}s`;
+          const duration = `${0.6 + random(i + 20) * 0.4}s`;
+          const dropHeight = `${10 + random(i + 30) * 10}px`;
+          
+          return (
+            <div
+              key={i}
+              className="absolute top-[-20px] w-[1.5px] rounded-full bg-gradient-to-b from-transparent to-blue-300/80"
+              style={{
+                left,
+                height: dropHeight,
+                animation: `rainFall ${duration} linear ${delay} infinite`
+              }}
+            />
+          );
+        })}
+      </div>
+    </foreignObject>
+  );
+};
+
 export default function HourlyForecast() {
   const { currentWeather } = useWeatherStore();
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -131,6 +173,14 @@ export default function HourlyForecast() {
       transition={{ duration: 0.5, delay: 0.1 }}
       className="w-full"
     >
+      <style>{`
+        @keyframes rainFall {
+          0% { transform: translateY(-20px); opacity: 0; }
+          10% { opacity: 1; }
+          80% { opacity: 1; }
+          100% { transform: translateY(120px); opacity: 0; }
+        }
+      `}</style>
       <div className="flex items-center justify-between mb-3 px-2">
         <h3 className="text-lg font-semibold text-white">Pronóstico por horas</h3>
         <label className="flex items-center gap-2 cursor-pointer bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-full transition-colors border border-white/5">
@@ -249,12 +299,11 @@ export default function HourlyForecast() {
                       cursor={{ stroke: 'rgba(255,255,255,0.2)', strokeWidth: 1, strokeDasharray: '4 4' }}
                     />
 
-                    {/* Lluvia background */}
+                    {/* Animacion de lluvia */}
                     <Bar 
                       dataKey="rainFull" 
                       yAxisId="rain"
-                      fill="rgba(59,130,246,0.15)" 
-                      barSize={40}
+                      shape={<CustomRainShape />}
                       isAnimationActive={false}
                     />
 
