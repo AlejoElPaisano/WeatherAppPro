@@ -351,6 +351,9 @@ const fetchWeatherByCoords = async (
   lon: number,
   city: string,
   country: string,
+  state?: string,
+  lang: string = 'en'
+) => {
   const params = `lat=${lat}&lon=${lon}&lang=${lang}`;
 
   const response = await fetchJson<{ weatherData: OpenWeatherCurrentResponse, forecastData: OpenWeatherForecastResponse }>(
