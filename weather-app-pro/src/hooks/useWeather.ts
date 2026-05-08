@@ -73,17 +73,8 @@ interface OpenWeatherForecastResponse {
   list: OpenWeatherForecastItem[];
 }
 
-const API_KEY_ERROR = 'API key no configurada. Agrega NEXT_PUBLIC_OPENWEATHER_API_KEY en .env.local.';
+const API_KEY_ERROR = 'API key no configurada. Asegúrate de tener OPENWEATHER_API_KEY en tu entorno de Vercel.';
 
-const getApiKey = () => {
-  const apiKey = process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY;
-
-  if (!apiKey || apiKey === 'tu_api_key_aqui') {
-    throw new Error(API_KEY_ERROR);
-  }
-
-  return apiKey;
-};
 
 const getWeatherType = (icon: string, dt?: number, sunrise?: number, sunset?: number): WeatherType => {
   const isNight = dt && sunrise && sunset ? dt < sunrise || dt > sunset : icon.endsWith('n');
@@ -349,10 +340,8 @@ export const formatLocationSuggestion = (location: LocationSuggestion) => {
 };
 
 const fetchLocationSuggestions = async (query: string) => {
-  const apiKey = getApiKey();
-
   return fetchJson<LocationSuggestion[]>(
-    `https://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(query)}&limit=5&appid=${apiKey}`,
+    `/api/geo/direct?q=${encodeURIComponent(query)}`,
     'Error al buscar ciudades'
   );
 };
@@ -362,22 +351,14 @@ const fetchWeatherByCoords = async (
   lon: number,
   city: string,
   country: string,
-  state?: string,
-  lang: string = 'en'
-) => {
-  const apiKey = getApiKey();
-  const params = `lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric&lang=${lang}`;
+  const params = `lat=${lat}&lon=${lon}&lang=${lang}`;
 
-  const [weatherData, forecastData] = await Promise.all([
-    fetchJson<OpenWeatherCurrentResponse>(
-      `https://api.openweathermap.org/data/2.5/weather?${params}`,
-      'Error al obtener datos del clima'
-    ),
-    fetchJson<OpenWeatherForecastResponse>(
-      `https://api.openweathermap.org/data/2.5/forecast?${params}`,
-      'Error al obtener pronostico'
-    )
-  ]);
+  const response = await fetchJson<{ weatherData: OpenWeatherCurrentResponse, forecastData: OpenWeatherForecastResponse }>(
+    `/api/weather?${params}`,
+    'Error al obtener datos del clima y pronóstico'
+  );
+
+  const { weatherData, forecastData } = response;
 
   let finalCity = city;
   let finalCountry = country;
@@ -386,7 +367,7 @@ const fetchWeatherByCoords = async (
   if (!finalCity) {
     try {
       const reverseGeo = await fetchJson<LocationSuggestion[]>(
-        `https://api.openweathermap.org/geo/1.0/reverse?lat=${lat}&lon=${lon}&limit=1&appid=${apiKey}`,
+        `/api/geo/reverse?lat=${lat}&lon=${lon}`,
         'Error en reverse geocoding'
       );
       if (reverseGeo && reverseGeo.length > 0) {
